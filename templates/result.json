@@ -1,0 +1,4 @@
+{
+	"error":{{.ErrorMessage}},
+	"result_code":{{.ResultCode}}
+}
