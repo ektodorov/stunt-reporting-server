@@ -13,7 +13,8 @@ func init() {
 func main() {
     http.HandleFunc(utils.PATH_ROOT, utils.HandlerRoot)
     http.HandleFunc(utils.PATH_ECHO, utils.HandlerEcho)
-    http.HandleFunc(utils.PATH_UPLOAD, utils.HandlerUpload)
+    http.HandleFunc(utils.PATH_UPLOADIMAGE, utils.HandlerUploadImage)
+    http.HandleFunc(utils.PATH_UPLOADFILE, utils.HandlerUploadFile)
     http.ListenAndServe(":8080", nil)
 }
 
