@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"io"
 	"io/ioutil"
 	"fmt"
@@ -33,7 +34,7 @@ func HandlerEcho(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
 	
 	headers := aRequest.Header
 	for key, value := range headers {
-		log.Printf("header=%s", key)
+		log.Printf("header=%s\n", key)
 		fmt.Fprintf(aResponseWriter, "Header=%s\n", key)		
 		for idx, val := range value {
 			log.Printf("idx=%d, value=%s", idx, val)
@@ -41,8 +42,33 @@ func HandlerEcho(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
 		} 
 	}
 
-	fmt.Fprintf(aResponseWriter, "Method=%s \n", aRequest.Method)
-	fmt.Fprintf(aResponseWriter, "%s", responseText)
+	fmt.Fprintf(aResponseWriter, "Method=%s\n", aRequest.Method)
+	fmt.Fprintf(aResponseWriter, "%s\n", responseText)
+}
+
+func HandlerMessage(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
+	aRequest.ParseForm()
+	
+	body := aRequest.Form
+	log.Printf("aRequest.Form=%s", body)
+	bytesBody, err := ioutil.ReadAll(aRequest.Body)
+	if(err != nil) {
+		log.Printf("Error reading body, err=%s", err.Error())
+	} else {
+		log.Printf("bytesBody=%s", string(bytesBody))
+	}
+	
+	headerAuthentication := aRequest.Header.Get(STR_Authorization)
+	log.Printf("headerAuthentication=%s", headerAuthentication)
+	
+	reportMessage := new(objects.ReportMessage)
+	json.Unmarshal(bytesBody, reportMessage)
+	log.Printf("report.Message=%s, report.Sequence=%d, report.Time=%d", reportMessage.Message, reportMessage.Sequence, reportMessage.Time)
+	
+	result := new(objects.Result)
+	result.ErrorMessage = STR_EMPTY
+	result.ResultCode = http.StatusOK
+	ServeResult(aResponseWriter, result, STR_template_result)
 }
 
 func HandlerUploadImage(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
