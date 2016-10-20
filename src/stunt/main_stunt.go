@@ -8,6 +8,7 @@ import (
 
 func init() {
 	log.SetFlags(log.Lshortfile)
+	utils.DbInit()
 }
 
 func main() {
