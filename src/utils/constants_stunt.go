@@ -5,6 +5,7 @@ import (
 	"github.com/nu7hatch/gouuid"
 	"fmt"
 	"math/rand"
+	"strings"
 	"time"
 )
 
@@ -15,6 +16,7 @@ const STR_GET = "GET"
 const STR_POST = "POST"
 const STR_error = "error"
 const STR_Authorization = "Authorization"
+const STR_symbol_dash = "-"
 
 const STR_template_page_error_html = "templates/page_error.html"
 const STR_template_result = "templates/result.json"
@@ -24,6 +26,7 @@ const STR_img_filepathSrc_template = "images/%s"
 const STR_img_filepathTemplates_template = "templates/%s"
 
 var Letters = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+const SALT_LENGTH = 32
 
 const PATH_ROOT = "/"
 const PATH_ECHO = "/echo"
@@ -45,7 +48,6 @@ const DB_NAME = "stunt.sqlite"
 const TABLE_USERS_COLUMN_id = "id"
 const TABLE_USERS_COLUMN_email = "email"
 const TABLE_USERS_COLUMN_password = "password"
-const TABLE_USERS_COLUMN_name = "name"
 const TABLE_USERS_COLUMN_salt = "salt"
 const TABLE_TOKENS_COLUMN_userid = "userid"
 const TABLE_TOKENS_COLUMN_token = "token"
@@ -54,14 +56,15 @@ const TABLE_REPORTS_COLUMN_time = "time"
 const TABLE_REPORTS_COLUMN_sequence = "sequence"
 const TABLE_REPORTS_COLUMN_message = "message"
 const TABLE_REPORTS_COLUMN_filepath = "filepath"
-const STMT_CREATE_TABLE_USERS = "create table if not exists users('id' integer primary key, 'email' text unique, 'password' text, 'name' text, 'salt' text)"
+const STMT_CREATE_TABLE_USERS = "create table if not exists users('id' integer primary key, 'email' text unique, 'password' text, 'salt' text)"
 const STMT_CREATE_TABLE_TOKENS = "create table if not exists tokens('userid' integer, 'token' text unique)"
-const STMT_CREATE_TABLE_REPORTS = "create table if not exists reports%s('clientid' string, 'time' integer, 'sequence' integer, 'message' text, 'filepath' text)"
+const STMT_CREATE_TABLE_REPORTS = "create table if not exists reports%s('clientid' text, 'time' integer, 'sequence' integer, 'message' text, 'filepath' text)"
 const STMT_CREATE_TABLE_REPORTS_TABLES = "create table if not exists reports('id' integer primary key, 'tablename' string)"
-const STMT_INSERT_INTO_USERS = "insert or ignore into users(email, password, name, salt) values(?, ?, ?, ?)"
+const STMT_INSERT_INTO_USERS = "insert or ignore into users(email, password, salt) values(?, ?, ?)"
 const STMT_INSERT_INTO_TOKENS = "insert or ignore into tokens(userid, token) values(?, ?)"
 const STMT_INSERT_INTO_REPORTS = "insert or ignore into reports%s(clientid, time, sequence, message, filepath) values(?, ?, ?, ?, ?)"
 const STMT_INSERT_INTO_REPORTS_TABLES = "insert or ignore into reports(id, tablename) values(?, ?)"
+
 
 func HashSha1(aValue string) (string, error) {
 	hashSha1 := sha1.New();
@@ -82,4 +85,14 @@ func GenerateRandomString(aLength int) string {
 		b[i] = Letters[rand.Intn(len(Letters))]
 	}
 	return string(b)
+}
+
+func GenerateToken() (string, error) {
+	tokenuuid, error := GenerateUUID()
+	if error != nil {
+		return "", error
+	}
+	
+	token := strings.Replace(tokenuuid, STR_symbol_dash, STR_EMPTY, -1)  
+	return token, error
 }
