@@ -17,6 +17,7 @@ const STR_POST = "POST"
 const STR_error = "error"
 const STR_Authorization = "Authorization"
 const STR_symbol_dash = "-"
+const STR_id = "id"
 
 const STR_template_page_error_html = "templates/page_error.html"
 const STR_template_result = "templates/result.json"
@@ -48,27 +49,24 @@ const DB_NAME = "stunt.sqlite"
 const TABLE_users = "users"
 const TABLE_tokens = "tokens"
 const TABLE_reports = "reports"
-const TABLE_USERS_COLUMN_id = "id"
+const TABLE_USERS_COLUMN_id = STR_id
 const TABLE_USERS_COLUMN_email = "email"
 const TABLE_USERS_COLUMN_password = "password"
 const TABLE_USERS_COLUMN_salt = "salt"
 const TABLE_TOKENS_COLUMN_userid = "userid"
 const TABLE_TOKENS_COLUMN_token = "token"
-const TABLE_REPORTS_COLUMN_userid = TABLE_TOKENS_COLUMN_userid
-const TABLE_REPORTS_COLUMN_tablename = "tablename"
 const TABLE_REPORTS_COLUMN_clientid = "clientid"
 const TABLE_REPORTS_COLUMN_time = "time"
 const TABLE_REPORTS_COLUMN_sequence = "sequence"
 const TABLE_REPORTS_COLUMN_message = "message"
 const TABLE_REPORTS_COLUMN_filepath = "filepath"
+const TABLE_REPORTS_COLUMN_id = STR_id
 const STMT_CREATE_TABLE_USERS = "create table if not exists users('id' integer primary key, 'email' text unique, 'password' text, 'salt' text)"
 const STMT_CREATE_TABLE_TOKENS = "create table if not exists tokens('userid' integer, 'token' text unique)"
 const STMT_CREATE_TABLE_REPORTS = "create table if not exists reports%s('id' integer primary key, 'clientid' text unique, 'time' integer, 'sequence' integer, 'message' text, 'filepath' text)"
-const STMT_CREATE_TABLE_REPORTS_TABLES = "create table if not exists reports('userid' integer, 'tablename' string)"
 const STMT_INSERT_INTO_USERS = "insert or ignore into users(email, password, salt) values(?, ?, ?)"
 const STMT_INSERT_INTO_TOKENS = "insert or ignore into tokens(userid, token) values(?, ?)"
 const STMT_INSERT_INTO_REPORTS = "insert or ignore into reports%s(id, clientid, time, sequence, message, filepath) values(?, ?, ?, ?, ?, ?)"
-const STMT_INSERT_INTO_REPORTS_TABLES = "insert or ignore into reports(id, tablename) values(?, ?)"
 
 
 func HashSha1(aValue string) (string, error) {
