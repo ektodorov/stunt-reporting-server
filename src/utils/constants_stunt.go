@@ -66,7 +66,7 @@ const STMT_CREATE_TABLE_TOKENS = "create table if not exists tokens('userid' int
 const STMT_CREATE_TABLE_REPORTS = "create table if not exists reports%s('id' integer primary key, 'clientid' text unique, 'time' integer, 'sequence' integer, 'message' text, 'filepath' text)"
 const STMT_INSERT_INTO_USERS = "insert or ignore into users(email, password, salt) values(?, ?, ?)"
 const STMT_INSERT_INTO_TOKENS = "insert or ignore into tokens(userid, token) values(?, ?)"
-const STMT_INSERT_INTO_REPORTS = "insert or ignore into reports%s(id, clientid, time, sequence, message, filepath) values(?, ?, ?, ?, ?, ?)"
+const STMT_INSERT_INTO_REPORTS = "insert or ignore into reports%s(clientid, time, sequence, message, filepath) values(?, ?, ?, ?, ?)"
 
 
 func HashSha1(aValue string) (string, error) {

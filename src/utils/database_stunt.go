@@ -207,12 +207,12 @@ func DbDeleteUser(aUserId int, aDb *sql.DB) bool {
 	stmt.Close()
 	
 	//Drop reports<token> tables for the user
-	stmt, err = db.Prepare("drop table if exists ?")
-	if err != nil {
-		log.Printf("Error preparing, drop table if exists ?, error=%s", err.Error())
-	}
 	for _, name := range sliceTokens {
-		_, err = stmt.Exec((TABLE_reports + name))
+		stmt, err = db.Prepare(fmt.Sprintf("drop table if exists %s%s", TABLE_reports, name))
+		if err != nil {
+			log.Printf("Error preparing, drop table if exists ?, error=%s", err.Error())
+		}
+		_, err = stmt.Exec()
 		if err != nil {
 			log.Printf("Error executing, drop table if exists %s, error=%s", (TABLE_reports + name), err.Error())
 		}
@@ -236,7 +236,10 @@ func DbGetUser(aEmail string, aPassword string, aDb *sql.DB) (id int, err error)
 		defer db.Close()
 	}
 	
-	db.Prepare(fmt.Sprintf("select * from %s where %s=?", TABLE_users, TABLE_USERS_COLUMN_email))
+	stmt, err = db.Prepare(fmt.Sprintf("select * from %s where %s=?", TABLE_users, TABLE_USERS_COLUMN_email))
+	if err != nil {
+		log.Printf("Error preparing %s, error=%s", fmt.Sprintf("select * from %s where %s=?", TABLE_users, TABLE_USERS_COLUMN_email), err.Error())
+	}
 	row = stmt.QueryRow(aEmail)
 	
 	var email string
@@ -273,16 +276,16 @@ func DbGetToken(aUserId int, aDb *sql.DB) []string {
 		defer db.Close()
 	}
 	
-	stmt, err = db.Prepare(fmt.Sprintf("select %s from %s where %s=?", TABLE_TOKENS_COLUMN_token, TABLE_users, TABLE_TOKENS_COLUMN_userid))
+	stmt, err = db.Prepare(fmt.Sprintf("select %s from %s where %s=?", TABLE_TOKENS_COLUMN_token, TABLE_tokens, TABLE_TOKENS_COLUMN_userid))
 	if err != nil {
 		log.Printf("Error preparing %s, error=%s", 
-			fmt.Sprintf("select %s from %s where %s=?", TABLE_TOKENS_COLUMN_token, TABLE_users, TABLE_TOKENS_COLUMN_userid), err.Error())
+			fmt.Sprintf("select %s from %s where %s=?", TABLE_TOKENS_COLUMN_token, TABLE_tokens, TABLE_TOKENS_COLUMN_userid), err.Error())
 	}
 	
 	rows, err = stmt.Query(aUserId)
 	if err != nil {
 		log.Printf("Error quering, %s, error=%s", 
-			fmt.Sprintf("select %s from %s where %s=?", TABLE_TOKENS_COLUMN_token, TABLE_users, TABLE_TOKENS_COLUMN_userid), err.Error())
+			fmt.Sprintf("select %s from %s where %s=?", TABLE_TOKENS_COLUMN_token, TABLE_tokens, TABLE_TOKENS_COLUMN_userid), err.Error())
 	}
 	var sliceTokens []string = make([]string, 0, 16)
 	for rows.Next() {
@@ -411,7 +414,7 @@ func DbClearReports(aToken string, aDb *sql.DB) {
 		defer db.Close()
 	}
 	
-	stmt, err = db.Prepare(fmt.Sprintf("delete * from %s%s", TABLE_reports, aToken))
+	stmt, err = db.Prepare(fmt.Sprintf("delete from %s%s", TABLE_reports, aToken))
 	if err != nil {
 		log.Printf("Error preparing %s, error=%s", fmt.Sprintf("delete * from %s%s", TABLE_reports, aToken), err.Error())
 	}
@@ -423,7 +426,7 @@ func DbClearReports(aToken string, aDb *sql.DB) {
 }
 
 func DbGetReportsByToken(aToken string, aClientId string, aStartNum int, aPageSize int, aDb *sql.DB) (sliceReports []*objects.Report, endNum int) {
-	endNum = -1
+	endNum = aStartNum
 	sliceReports = nil
 	var err error = nil
 	var db *sql.DB = aDb
@@ -447,7 +450,7 @@ func DbGetReportsByToken(aToken string, aClientId string, aStartNum int, aPageSi
 			err.Error())
 	}
 	
-	rows, err = stmt.Query(aToken)
+	rows, err = stmt.Query(aStartNum, (aStartNum + aPageSize))
 	if err != nil {
 		log.Printf("Error quering, %s, error=%s", 
 			fmt.Sprintf("select * from %s%s where %s > ? order by %s limit ?", TABLE_reports, aToken, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_id),
@@ -462,7 +465,10 @@ func DbGetReportsByToken(aToken string, aClientId string, aStartNum int, aPageSi
 		var sequence int
 		var message string
 		var filePath string
-		rows.Scan(&id, &clientId, &sequence, &message, &filePath)
+		err = rows.Scan(&id, &clientId, &time, &sequence, &message, &filePath)
+		if err != nil {
+			log.Printf("Error scanning, error=%s", err.Error())
+		}
 		var report = new(objects.Report)
 		report.Id = id
 		report.ClientId = clientId
@@ -470,6 +476,7 @@ func DbGetReportsByToken(aToken string, aClientId string, aStartNum int, aPageSi
 		report.Message = message
 		report.FilePath = filePath
 		sliceReports = append(sliceReports, report)
+		endNum++
 	}
 	if rows != nil {rows.Close()}
 	if stmt != nil {stmt.Close()}
