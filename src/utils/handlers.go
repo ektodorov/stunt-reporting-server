@@ -10,10 +10,46 @@ import (
 	"os"
 	"objects"
 	"strconv"
+	"html/template"
 )
 
 func HandlerRoot(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
-    ServeError(aResponseWriter, STR_MSG_NOTFOUND, STR_template_page_error_html)
+    //ServeError(aResponseWriter, STR_MSG_NOTFOUND, STR_template_page_error_html)
+    
+    aRequest.ParseForm();
+	
+	cookie, errCookie := aRequest.Cookie(API_KEY_token)
+	if errCookie != nil {
+		log.Printf("handleRoot, Error reading cookie, error=%s", errCookie.Error())
+		ServeLogin(aResponseWriter, STR_MSG_login);
+		return
+	}
+	isTokenValid, userId := DbIsTokenValid(cookie.Value, nil)
+	if errCookie == nil && !isTokenValid {
+		ServeLogin(aResponseWriter, STR_MSG_login);
+		return
+	}
+	
+	user, errorUser := DbGetUserLoad(userId, nil);
+	if errorUser != nil {
+		log.Printf("errorUser=%s", errorUser.Error())
+	}
+	log.Printf("cookie.value=%s", cookie.Value)
+	
+	//Check if the file in the url path exists
+	templateFile, err := template.ParseFiles(aRequest.URL.Path[1:]);
+	if err != nil {
+		ServeError(aResponseWriter, STR_MSG_404, STR_template_page_error_html);
+	} else {	
+		if aRequest.URL.Path[1:] == "templates/Content.html" && user.Email != STR_EMPTY {
+			err = templateFile.Execute(aResponseWriter, user);
+		} else {
+			err = templateFile.Execute(aResponseWriter, nil);
+		}
+		if err != nil {
+			log.Printf("handleRoot, Error=", err.Error());
+		}
+	}
 }
 
 func HandlerEcho(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
@@ -189,6 +225,62 @@ func HandlerUploadFile(aResponseWriter http.ResponseWriter, aRequest *http.Reque
 		result.ErrorMessage = STR_EMPTY
 		result.ResultCode = http.StatusOK
 		ServeResult(aResponseWriter, result, STR_template_result)
+	}
+}
+
+func HandlerLogin(responseWriter http.ResponseWriter, request *http.Request) {
+	request.ParseForm();
+	
+	if request.Method == STR_GET {
+		ServeLogin(responseWriter, STR_EMPTY);	
+	} else {
+		var userName string = request.FormValue(API_KEY_username);
+		var password string = request.FormValue(API_KEY_password);
+		if userName == STR_EMPTY || password == STR_EMPTY {
+			ServeLogin(responseWriter, "Please enter username and password");
+			return;
+		}
+		
+		var userId = -1;
+		var errorUser error = nil
+		userId, errorUser = DbGetUser(userName, password, nil)
+		if errorUser != nil {
+			log.Printf("handlerLogin, errorUser=%s", errorUser.Error())
+		}
+		if (userId > -1) {
+			token := DbAddToken(userId, nil)
+			AddCookie(responseWriter, token)
+			http.Redirect(responseWriter, request, API_URL_Content, 301)
+		} else {
+			ServeLogin(responseWriter, "Wrong username or password");
+		}
+	}
+}
+
+func HandlerRegister(responseWriter http.ResponseWriter, request *http.Request) {
+	request.ParseForm();
+	
+	if request.Method == STR_GET {
+		ServeRegister(responseWriter, STR_EMPTY);
+	} else {
+		email := request.FormValue(API_KEY_email);
+		password := request.FormValue(API_KEY_password);
+		if (email == STR_EMPTY || password == STR_EMPTY) {
+			ServeRegister(responseWriter, STR_MSG_register);
+			return;
+		}
+		
+		isUserExists, isUserAdded, errorUser := DbAddUser(email, password, nil);
+		if errorUser != nil {
+			log.Printf("handleRegister, errorUser=%s", errorUser.Error())
+		}
+		if isUserExists {
+			ServeRegister(responseWriter, "Username is already taken.");
+		} else if isUserAdded == false {
+			ServeRegister(responseWriter, "Cannot create user.");
+		} else {
+			ServeLogin(responseWriter, STR_EMPTY);
+		}
 	}
 }
 

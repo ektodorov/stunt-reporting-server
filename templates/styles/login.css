@@ -1,0 +1,36 @@
+/* style the form */
+form {
+	margin: 0 auto;
+	width: 470px;
+	padding: 20px;
+}
+form div + div {
+	margin-top: 15px;
+}
+label {
+ 	display: inline-block;
+    	width: 200px;
+    	text-align: right;
+}
+#checkbox, #dropbox, #radiobutton {
+	vertical-align: top;
+	display: inline-block;
+	width: 90px;
+	text-align: left;
+}
+
+input {
+	width: 250px;
+}
+input:focus {
+    border-color: #0000ff
+}
+button {
+	width:60%;
+	font-size:20px;
+	float: right;
+}
+.button {
+	padding-left: 0px;
+	text-align: center;
+}

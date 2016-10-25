@@ -17,6 +17,8 @@ func main() {
     http.HandleFunc(utils.PATH_MESSAGE, utils.HandlerMessage)
     http.HandleFunc(utils.PATH_UPLOADIMAGE, utils.HandlerUploadImage)
     http.HandleFunc(utils.PATH_UPLOADFILE, utils.HandlerUploadFile)
+    http.HandleFunc(utils.PATH_Login, utils.HandlerLogin)
+    http.HandleFunc(utils.PATH_Register, utils.HandlerRegister)
     http.ListenAndServe(":8080", nil)
 }
 

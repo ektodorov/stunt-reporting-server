@@ -6,39 +6,52 @@ import (
 	"fmt"
 	"log"
 	"objects"
-//	"time"
+	"time"
 )
 
 func DbInit() error {
-	var err error = nil;
-	var db *sql.DB = nil;
-	var stmt *sql.Stmt = nil;
+	var err error = nil
+	var db *sql.DB = nil
+	var stmt *sql.Stmt = nil
 
-	db, err = sql.Open(DB_TYPE, DB_NAME);
+	db, err = sql.Open(DB_TYPE, DB_NAME)
 	if err != nil {
-		log.Println("init, Error opening db", DB_NAME, ", err=", err);
+		log.Println("init, Error opening db", DB_NAME, ", err=", err)
 		return err;
 	}
 	defer db.Close();
 	
-	stmt, err = db.Prepare(STMT_CREATE_TABLE_USERS);
+	//init table users
+	stmt, err = db.Prepare(STMT_CREATE_TABLE_USERS)
 	if err != nil {
-		log.Println("init, Error preparing create table users stmt, err=", err);
+		log.Println("init, Error preparing create table users stmt, err=", err)
 		return err;
 	}
-	_, err = stmt.Exec();
+	_, err = stmt.Exec()
 	if err != nil {
-		log.Println("init, Error exec create table stmt, err=", err);
+		log.Println("init, Error exec create table stmt, err=", err)
 	}
 	stmt.Close();
 	
-	stmt, err = db.Prepare(STMT_CREATE_TABLE_TOKENS);
+	//init table tokens
+	stmt, err = db.Prepare(STMT_CREATE_TABLE_TOKENS)
 	if err != nil {
-		log.Println("init, Error preparing create table tokens, err=", err);
+		log.Printf("Error preparing, %s, error=%s", STMT_CREATE_TABLE_TOKENS, err.Error())
 	}
-	_, err = stmt.Exec();
+	_, err = stmt.Exec()
 	if err != nil {
-		log.Println("init, Error executing create table tokens, err=", err);
+		log.Printf("Error creating table, %s, error=%s", STMT_CREATE_TABLE_TOKENS, err.Error())
+	}
+	stmt.Close()
+	
+	
+	stmt, err = db.Prepare(STMT_CREATE_TABLE_APIKEYS)
+	if err != nil {
+		log.Println("init, Error preparing, %s, err=", STMT_CREATE_TABLE_APIKEYS, err)
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		log.Println("init, Error executing, %s, err=",STMT_CREATE_TABLE_APIKEYS, err)
 	}
 	stmt.Close();
 	return nil
@@ -46,8 +59,8 @@ func DbInit() error {
 
 
 // Adds a user in the users table if it does not exist.
-// Token is also generated for the user. If token creation fails for some reason,
-// we would not fail the user creation. We would just have to check if a token exists for that user when we are presenting it to the
+// ApiKey is also generated for the user. If apiKey creation fails for some reason,
+// we would not fail the user creation. We would just have to check if a apiKey exists for that user when we are presenting it to the
 // user and if it doesn't we should create it then.
 func DbAddUser(aEmail string, aPassword string, aDb *sql.DB) (isUserExists bool, isUserAdded bool, errorUser error) {
 	var err error = nil
@@ -109,7 +122,7 @@ func DbAddUser(aEmail string, aPassword string, aDb *sql.DB) (isUserExists bool,
 		}
 		stmt.Close()
 		
-		//create and insert token
+		//create and insert apiKey
 		stmt, err = db.Prepare(fmt.Sprintf("select %s from %s where %s=?", TABLE_USERS_COLUMN_id, TABLE_users, TABLE_USERS_COLUMN_email))
 		if err != nil {
 			log.Printf("Error preparing, select id from users where email=?, error=%s", err.Error())
@@ -131,7 +144,7 @@ func DbAddUser(aEmail string, aPassword string, aDb *sql.DB) (isUserExists bool,
 		if userId < 0 {
 			return isUserExists, false, nil
 		}
-		DbAddToken(userId, db)
+		DbAddApiKey(userId, db)
 		
 		return isUserExists, true, nil
 	} else {
@@ -139,7 +152,7 @@ func DbAddUser(aEmail string, aPassword string, aDb *sql.DB) (isUserExists bool,
 	}
 }
 
-//Deletes a user and his tokens and the reports<token> tables of that user
+//Deletes a user and his apiKeys and the reports<apiKey> tables of that user
 func DbDeleteUser(aUserId int, aDb *sql.DB) bool {
 	var err error = nil
 	var db *sql.DB = aDb
@@ -168,46 +181,46 @@ func DbDeleteUser(aUserId int, aDb *sql.DB) bool {
 	}
 	stmt.Close()
 	
-	stmt, err = db.Prepare(fmt.Sprintf("select %s from %s where %s=?", TABLE_TOKENS_COLUMN_token, TABLE_tokens, TABLE_TOKENS_COLUMN_userid))
+	stmt, err = db.Prepare(fmt.Sprintf("select %s from %s where %s=?", TABLE_APIKEYS_COLUMN_apikey, TABLE_apikeys, TABLE_APIKEYS_COLUMN_userid))
 	if err != nil {
 		log.Printf("Error preparing, %s, error=%s", 
-			fmt.Sprintf("select %s from %s where %s=?", TABLE_TOKENS_COLUMN_token, TABLE_tokens, TABLE_TOKENS_COLUMN_userid), err.Error())
+			fmt.Sprintf("select %s from %s where %s=?", TABLE_APIKEYS_COLUMN_apikey, TABLE_apikeys, TABLE_APIKEYS_COLUMN_userid), err.Error())
 		return false
 	}
 	rows, err = stmt.Query(aUserId)
 	if err != nil {
 		log.Printf("Error quering, %s, error=%s", 
-			fmt.Sprintf("select %s from %s where %s=%d", TABLE_TOKENS_COLUMN_token, TABLE_tokens, TABLE_TOKENS_COLUMN_userid, aUserId), err.Error())
+			fmt.Sprintf("select %s from %s where %s=%d", TABLE_APIKEYS_COLUMN_apikey, TABLE_apikeys, TABLE_APIKEYS_COLUMN_userid, aUserId), err.Error())
 		return false
 	}	
-	//get all tokens of user
-	var sliceTokens []string = make([]string, 0, 16)
+	//get all apiKeys of user
+	var sliceApiKeys []string = make([]string, 0, 16)
 	for rows.Next() {
-		var token string
-		rows.Scan(&token)
-		sliceTokens = append(sliceTokens, token)
+		var apiKey string
+		rows.Scan(&apiKey)
+		sliceApiKeys = append(sliceApiKeys, apiKey)
 	}
 	if rows != nil {rows.Close()}
 	if stmt != nil {stmt.Close()}
-	if len(sliceTokens) == 0 {
+	if len(sliceApiKeys) == 0 {
 		return true
 	}
 	
-	//Delete tokens of user (delete from table tokens)
-	stmt, err = db.Prepare(fmt.Sprintf("delete from %s where %s=?", TABLE_tokens, TABLE_TOKENS_COLUMN_userid))
+	//Delete apiKeys of user (delete from table apiKeys)
+	stmt, err = db.Prepare(fmt.Sprintf("delete from %s where %s=?", TABLE_apikeys, TABLE_APIKEYS_COLUMN_userid))
 	if err != nil {
-		log.Printf("Error preparing, delete from %s where userid=?, error=%s", TABLE_tokens, err.Error())
+		log.Printf("Error preparing, delete from %s where userid=?, error=%s", TABLE_apikeys, err.Error())
 		return false
 	}
 	_, err = stmt.Exec(aUserId)
 	if err != nil {
-		log.Printf("Error executing, %s, error=%s", fmt.Sprintf("delete from %s where %s=%d", TABLE_tokens, TABLE_TOKENS_COLUMN_userid, aUserId), err.Error())
+		log.Printf("Error executing, %s, error=%s", fmt.Sprintf("delete from %s where %s=%d", TABLE_apikeys, TABLE_APIKEYS_COLUMN_userid, aUserId), err.Error())
 		return false
 	}
 	stmt.Close()
 	
-	//Drop reports<token> tables for the user
-	for _, name := range sliceTokens {
+	//Drop reports<apiKey> tables for the user
+	for _, name := range sliceApiKeys {
 		stmt, err = db.Prepare(fmt.Sprintf("drop table if exists %s%s", TABLE_reports, name))
 		if err != nil {
 			log.Printf("Error preparing, drop table if exists ?, error=%s", err.Error())
@@ -260,8 +273,141 @@ func DbGetUser(aEmail string, aPassword string, aDb *sql.DB) (id int, err error)
 	return id, err
 }
 
-// Get all tokens of a user.
-func DbGetToken(aUserId int, aDb *sql.DB) []string {
+func DbGetUserLoad(aUserId int, aDb *sql.DB) (user *objects.User, err error) {
+	user = new(objects.User)
+	user.Id = aUserId
+	var db *sql.DB = aDb
+	var stmt *sql.Stmt = nil
+	var row *sql.Row = nil
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			log.Printf("Error opening database=%s, error=%s", DB_NAME, err.Error())
+			return user, err
+		}
+		defer db.Close()
+	}
+	
+	stmt, err = db.Prepare(fmt.Sprintf("select * from %s where %s=?", TABLE_users, TABLE_USERS_COLUMN_id))
+	if stmt != nil {defer stmt.Close()}
+	if err != nil {
+		log.Printf("Error preparing %s, error=%s", fmt.Sprintf("select * from %s where %s=?", TABLE_users, TABLE_USERS_COLUMN_email), err.Error())
+	}
+	row = stmt.QueryRow(aUserId)
+	
+	var id int
+	var email string
+	var password string
+	var salt string
+	err = row.Scan(&id, &email, &password, &salt)
+	if err != nil && err == sql.ErrNoRows {
+		return user, err
+	} else {
+		user.Id = id
+		user.Email = email
+	}
+	
+	return user, err
+}
+
+func DbAddToken(aUserId int, aDb *sql.DB) (token string) {
+	DbCleanTokens(aUserId, aDb)
+
+	var err error = nil
+	var db *sql.DB = aDb
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			fmt.Println("AddToken, Error opening db, err=", err)
+			return
+		}
+		defer db.Close()
+	}
+	
+	token, errUUID := GenerateUUID()
+	if errUUID != nil {
+		fmt.Println("Erro generating uuid, err=", errUUID)
+	}
+	issued := time.Now().UnixNano() / int64(time.Millisecond)
+	expires := TOKEN_VALIDITY_MS
+	
+	tokenHash, errHash := HashSha1(token)
+	if errHash != nil {
+		fmt.Println("AddToken, Error hasing token, err=", errHash)
+	}
+	
+	_, err = db.Exec("insert or ignore into tokens(userid, token, issued, expires) values(?, ?, ?, ?)", aUserId, tokenHash, issued, expires)
+	if err != nil {
+		fmt.Println("AddToken, Error inserting into tokens, err=", err)
+	}
+	return token
+}
+
+func DbIsTokenValid(aToken string, aDb *sql.DB) (isValid bool, userId int) {
+	var err error = nil
+	var db *sql.DB = aDb
+	var rows *sql.Rows = nil
+	
+	tokenHash, errHash := HashSha1(aToken)
+	if errHash != nil {
+		fmt.Println("IsTokenValid, Erro hash token, err=", errHash)
+	}
+
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			fmt.Println("IsTokenValid, Error opening db login.sqlite, err=", err)
+			return false, -1
+		}
+		defer db.Close()
+	}
+	
+	rows, err = db.Query("select * from tokens")
+	if err != nil {
+		fmt.Println("IsTokenValid, Error select from tokens, err=", err)
+		return false, -1;
+	}
+	defer rows.Close()
+	
+	now := time.Now().UnixNano() / int64(time.Millisecond)
+	for (rows.Next()) {
+		var id int
+		var userId int
+		var token string
+		var issued int64
+		var expires int64
+		err = rows.Scan(&id, &userId, &token, &issued, &expires)
+		if err != nil {
+			fmt.Println("IsTokenValid, Error scan tokens, err=", err)
+		}
+		if token == tokenHash && now < (issued + expires) {
+			return true, userId;
+		}
+	}
+	return false, -1;
+}
+
+func DbCleanTokens(aUserId int, aDb *sql.DB) {
+	var err error = nil
+	var db *sql.DB = aDb
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			fmt.Println("IsTokenValid, Error opening db login.sqlite, err=", err)
+			return
+		}
+		defer db.Close()
+	}
+	
+	now := time.Now().UnixNano() / int64(time.Millisecond)
+	db.Exec("delete from tokens where userid=? AND issued + expires < ?", aUserId, now)
+}
+
+// Get all apiKeys of a user.
+func DbGetApiKey(aUserId int, aDb *sql.DB) []string {
 	var err error = nil
 	var db *sql.DB = aDb
 	var stmt *sql.Stmt = nil
@@ -276,32 +422,32 @@ func DbGetToken(aUserId int, aDb *sql.DB) []string {
 		defer db.Close()
 	}
 	
-	stmt, err = db.Prepare(fmt.Sprintf("select %s from %s where %s=?", TABLE_TOKENS_COLUMN_token, TABLE_tokens, TABLE_TOKENS_COLUMN_userid))
+	stmt, err = db.Prepare(fmt.Sprintf("select %s from %s where %s=?", TABLE_APIKEYS_COLUMN_apikey, TABLE_apikeys, TABLE_APIKEYS_COLUMN_userid))
 	if err != nil {
 		log.Printf("Error preparing %s, error=%s", 
-			fmt.Sprintf("select %s from %s where %s=?", TABLE_TOKENS_COLUMN_token, TABLE_tokens, TABLE_TOKENS_COLUMN_userid), err.Error())
+			fmt.Sprintf("select %s from %s where %s=?", TABLE_APIKEYS_COLUMN_apikey, TABLE_apikeys, TABLE_APIKEYS_COLUMN_userid), err.Error())
 	}
 	
 	rows, err = stmt.Query(aUserId)
 	if err != nil {
 		log.Printf("Error quering, %s, error=%s", 
-			fmt.Sprintf("select %s from %s where %s=?", TABLE_TOKENS_COLUMN_token, TABLE_tokens, TABLE_TOKENS_COLUMN_userid), err.Error())
+			fmt.Sprintf("select %s from %s where %s=?", TABLE_APIKEYS_COLUMN_apikey, TABLE_apikeys, TABLE_APIKEYS_COLUMN_userid), err.Error())
 	}
-	var sliceTokens []string = make([]string, 0, 16)
+	var sliceApiKeys []string = make([]string, 0, 16)
 	for rows.Next() {
-		var token string
-		rows.Scan(&token)
-		sliceTokens = append(sliceTokens, token)
+		var apiKey string
+		rows.Scan(&apiKey)
+		sliceApiKeys = append(sliceApiKeys, apiKey)
 	}
 	if rows != nil {rows.Close()}
 	if stmt != nil {stmt.Close()}
 	
-	return sliceTokens
+	return sliceApiKeys
 }
 
-// Token is added in DbAddUser.
-// This method we can use when we want to add additional tokencs for a user, or if the user does not have a token when we present it to him.
-func DbAddToken(aUserId int, aDb *sql.DB) bool {
+// ApiKey is added in DbAddUser.
+// This method we can use when we want to add additional apiKeys for a user, or if the user does not have a apiKey when we present it to him.
+func DbAddApiKey(aUserId int, aDb *sql.DB) bool {
 	var err error = nil
 	var db *sql.DB = aDb
 	var stmt *sql.Stmt = nil	
@@ -319,24 +465,28 @@ func DbAddToken(aUserId int, aDb *sql.DB) bool {
 		defer db.Close()
 	}
 	
-	var token string = STR_EMPTY
-	token, err = GenerateToken()
-	stmt, err = db.Prepare(STMT_INSERT_INTO_TOKENS)
+	stmt, err = db.Prepare(STMT_INSERT_INTO_APIKEYS)
 	if err != nil {
-		log.Printf("Error preparing %s, error=%s", STMT_INSERT_INTO_TOKENS, err.Error())
+		log.Printf("Error preparing %s, error=%s", STMT_INSERT_INTO_APIKEYS, err.Error())
 	}
-	_, err = stmt.Exec(aUserId, token)
+	
+	var apiKey string = STR_EMPTY
+	apiKey, err = GenerateToken()
 	if err != nil {
-		log.Printf("Error executing %s, values userId=%d, token=%s, error=%s", STMT_INSERT_INTO_TOKENS, aUserId, token, err.Error())
-		stmt.Close()
+		log.Printf("Error generateToken, error=%s", err.Error())
+	}
+	_, err = stmt.Exec(aUserId, apiKey)
+	if err != nil {
+		log.Printf("Error executing %s, values userId=%d, apiKey=%s, error=%s", STMT_INSERT_INTO_APIKEYS, aUserId, apiKey, err.Error())
+		if stmt != nil {stmt.Close()}
 		return false
 	}
 	if stmt != nil {stmt.Close()}
 	return true
 }
 
-// Check to see if we already have reports<aToken> table and use it, if we do not, we have to first create it
-func DbAddReport(aUserId int, aToken string, aClientId string, aTime int, aSequence int, aMessage string, aFilePath string, aDb *sql.DB) {
+// Check to see if we already have reports<aApiKey> table and use it, if we do not, we have to first create it
+func DbAddReport(aUserId int, aApiKey string, aClientId string, aTime int, aSequence int, aMessage string, aFilePath string, aDb *sql.DB) {
 	var err error = nil
 	var db *sql.DB = aDb
 	var stmt *sql.Stmt = nil
@@ -350,29 +500,29 @@ func DbAddReport(aUserId int, aToken string, aClientId string, aTime int, aSeque
 		defer db.Close()
 	}	
 	
-	stmt, err = db.Prepare(fmt.Sprintf(STMT_CREATE_TABLE_REPORTS, aToken))
+	stmt, err = db.Prepare(fmt.Sprintf(STMT_CREATE_TABLE_REPORTS, aApiKey))
 	if err != nil {
-		log.Printf("Error creating, %s, error=%s", fmt.Sprintf(STMT_CREATE_TABLE_REPORTS, aToken), err.Error())
+		log.Printf("Error creating, %s, error=%s", fmt.Sprintf(STMT_CREATE_TABLE_REPORTS, aApiKey), err.Error())
 	}
 	_, err = stmt.Exec()
 	if err != nil {
-		log.Printf("Error executing, %s, error=%s", fmt.Sprintf(STMT_CREATE_TABLE_REPORTS, aToken), err.Error())
+		log.Printf("Error executing, %s, error=%s", fmt.Sprintf(STMT_CREATE_TABLE_REPORTS, aApiKey), err.Error())
 	}
 	if stmt != nil {stmt.Close()}
 	
-	stmt, err = db.Prepare(fmt.Sprintf(STMT_INSERT_INTO_REPORTS, aToken))
+	stmt, err = db.Prepare(fmt.Sprintf(STMT_INSERT_INTO_REPORTS, aApiKey))
 	if err != nil {
-		log.Printf("Error preparing, %s, error=%s", fmt.Sprintf(STMT_INSERT_INTO_REPORTS, aToken), err.Error())
+		log.Printf("Error preparing, %s, error=%s", fmt.Sprintf(STMT_INSERT_INTO_REPORTS, aApiKey), err.Error())
 	}
 	_, err = stmt.Exec(aClientId, aTime, aSequence, aMessage, aFilePath)
 	if err != nil {
-		log.Printf("Error executing, %s, error=%s", fmt.Sprintf(STMT_INSERT_INTO_REPORTS, aToken), err.Error())
+		log.Printf("Error executing, %s, error=%s", fmt.Sprintf(STMT_INSERT_INTO_REPORTS, aApiKey), err.Error())
 	}
 	if stmt != nil {stmt.Close()}
 }
 
 
-func DbDeleteReport(aToken string, aId int, aDb *sql.DB) {
+func DbDeleteReport(aApiKey string, aId int, aDb *sql.DB) {
 	var err error = nil
 	var db *sql.DB = aDb
 	var stmt *sql.Stmt = nil
@@ -386,21 +536,21 @@ func DbDeleteReport(aToken string, aId int, aDb *sql.DB) {
 		defer db.Close()
 	}
 	
-	stmt, err = db.Prepare(fmt.Sprintf("delete from %s%s where %s=?", TABLE_reports, aToken, TABLE_REPORTS_COLUMN_id))
+	stmt, err = db.Prepare(fmt.Sprintf("delete from %s%s where %s=?", TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id))
 	if err != nil {
-		log.Printf("Error preparing, %s, error=%s", fmt.Sprintf("delete from %s%s where %s=?", TABLE_reports, aToken, TABLE_REPORTS_COLUMN_id), err.Error())
+		log.Printf("Error preparing, %s, error=%s", fmt.Sprintf("delete from %s%s where %s=?", TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id), err.Error())
 	}
 	_, err = stmt.Exec(aId)
 	if err != nil {
 		log.Printf("Error deleting, %s, error=%s", 
-				fmt.Sprintf("delete from %s%s where %s=aId", TABLE_reports, aToken, TABLE_REPORTS_COLUMN_id, aId), err.Error())
+				fmt.Sprintf("delete from %s%s where %s=aId", TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id, aId), err.Error())
 	}
 	if stmt != nil {stmt.Close()}
 }
 
-// Delete all records in the reports<token> table
-func DbClearReports(aToken string, aDb *sql.DB) {
-	// Instead of deleting all from reports<aToken> we can just - drop table if exists reports<aToken>
+// Delete all records in the reports<apiKey> table
+func DbClearReports(aApiKey string, aDb *sql.DB) {
+	// Instead of deleting all from reports<aApiKey> we can just - drop table if exists reports<aApiKey>
 	var err error = nil
 	var db *sql.DB = aDb
 	var stmt *sql.Stmt = nil
@@ -414,18 +564,18 @@ func DbClearReports(aToken string, aDb *sql.DB) {
 		defer db.Close()
 	}
 	
-	stmt, err = db.Prepare(fmt.Sprintf("delete from %s%s", TABLE_reports, aToken))
+	stmt, err = db.Prepare(fmt.Sprintf("delete from %s%s", TABLE_reports, aApiKey))
 	if err != nil {
-		log.Printf("Error preparing %s, error=%s", fmt.Sprintf("delete * from %s%s", TABLE_reports, aToken), err.Error())
+		log.Printf("Error preparing %s, error=%s", fmt.Sprintf("delete * from %s%s", TABLE_reports, aApiKey), err.Error())
 	}
 	_, err = stmt.Exec()
 	if err != nil {
-		log.Printf("Error executing %s, error=%s", fmt.Sprintf("delete * from %s%s", TABLE_reports, aToken), err.Error())
+		log.Printf("Error executing %s, error=%s", fmt.Sprintf("delete * from %s%s", TABLE_reports, aApiKey), err.Error())
 	}
 	stmt.Close()
 }
 
-func DbGetReportsByToken(aToken string, aClientId string, aStartNum int, aPageSize int, aDb *sql.DB) (sliceReports []*objects.Report, endNum int) {
+func DbGetReportsByApiKey(aApiKey string, aClientId string, aStartNum int, aPageSize int, aDb *sql.DB) (sliceReports []*objects.Report, endNum int) {
 	endNum = aStartNum
 	sliceReports = nil
 	var err error = nil
@@ -443,17 +593,17 @@ func DbGetReportsByToken(aToken string, aClientId string, aStartNum int, aPageSi
 	}
 	
 	stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s where %s > ? order by %s limit ?",
-					TABLE_reports, aToken, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_id))
+					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_id))
 	if err != nil {
 		log.Printf("Error preparing, %s, error=%s", 
-			fmt.Sprintf("select * from %s%s where %s > ? order by %s limit ?", TABLE_reports, aToken, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_id),
+			fmt.Sprintf("select * from %s%s where %s > ? order by %s limit ?", TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_id),
 			err.Error())
 	}
 	
 	rows, err = stmt.Query(aStartNum, (aStartNum + aPageSize))
 	if err != nil {
 		log.Printf("Error quering, %s, error=%s", 
-			fmt.Sprintf("select * from %s%s where %s > ? order by %s limit ?", TABLE_reports, aToken, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_id),
+			fmt.Sprintf("select * from %s%s where %s > ? order by %s limit ?", TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_id),
 			err.Error())
 	}
 	

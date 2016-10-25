@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+var Letters = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+const SALT_LENGTH = 32
+const TOKEN_VALIDITY_SECONDS = 60
+const TOKEN_VALIDITY_MS = TOKEN_VALIDITY_SECONDS * 1000
+
 const STR_EMPTY = ""
 const STR_BLANK = " "
 const STR_MSG_NOTFOUND = "404 Not found"
@@ -18,7 +23,13 @@ const STR_error = "error"
 const STR_Authorization = "Authorization"
 const STR_symbol_dash = "-"
 const STR_id = "id"
+const STR_MSG_404 = "404 Page not found."
+const STR_MSG_login = "Please login."
+const STR_MSG_register = "Please enter email and password."
 
+const STR_templates_login_html = "templates/login.html"
+const STR_templates_register_html = "templates/register.html"
+const STR_templates_Content_html = "templates/Page1.html"
 const STR_template_page_error_html = "templates/page_error.html"
 const STR_template_result = "templates/result.json"
 
@@ -26,15 +37,14 @@ const STR_img_filepathSave_template = "templates/images/%s"
 const STR_img_filepathSrc_template = "images/%s"
 const STR_img_filepathTemplates_template = "templates/%s"
 
-var Letters = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-const SALT_LENGTH = 32
-
 const PATH_ROOT = "/"
 const PATH_ECHO = "/echo"
 const PATH_MESSAGE = "/message"
 const PATH_UPLOADIMAGE = "/uploadimage"
 const PATH_UPLOADFILE = "/uploadfile"
 const PATH_STATIC_TEMPLATES = "./templates"
+const PATH_Login = "/login/"
+const PATH_Register = "/register/"
 const PORT_8080 = ":8080"
 
 const API_KEY_image = "image"
@@ -43,18 +53,30 @@ const API_KEY_filename = "filename"
 const API_KEY_sequence = "sequence"
 const API_KEY_time = "time"
 const API_KEY_message = "message"
+const API_KEY_username = "username"
+const API_KEY_password = "password"
+const API_KEY_email = "email"
+const API_KEY_token = "token"
+
+const API_URL_Content = "http://localhost:8080/templates/Content.html"
 
 const DB_TYPE = "sqlite3"
 const DB_NAME = "stunt.sqlite"
 const TABLE_users = "users"
 const TABLE_tokens = "tokens"
+const TABLE_apikeys = "apikeys"
 const TABLE_reports = "reports"
 const TABLE_USERS_COLUMN_id = STR_id
 const TABLE_USERS_COLUMN_email = "email"
 const TABLE_USERS_COLUMN_password = "password"
 const TABLE_USERS_COLUMN_salt = "salt"
+const TABLE_TOKENS_COLUMN_id = STR_id
 const TABLE_TOKENS_COLUMN_userid = "userid"
 const TABLE_TOKENS_COLUMN_token = "token"
+const TABLE_TOKENS_COLUMN_issued = "issued"
+const TABLE_TOKENS_COLUMN_expires = "expires"
+const TABLE_APIKEYS_COLUMN_userid = "userid"
+const TABLE_APIKEYS_COLUMN_apikey = "apikey"
 const TABLE_REPORTS_COLUMN_clientid = "clientid"
 const TABLE_REPORTS_COLUMN_time = "time"
 const TABLE_REPORTS_COLUMN_sequence = "sequence"
@@ -62,10 +84,12 @@ const TABLE_REPORTS_COLUMN_message = "message"
 const TABLE_REPORTS_COLUMN_filepath = "filepath"
 const TABLE_REPORTS_COLUMN_id = STR_id
 const STMT_CREATE_TABLE_USERS = "create table if not exists users('id' integer primary key, 'email' text unique, 'password' text, 'salt' text)"
-const STMT_CREATE_TABLE_TOKENS = "create table if not exists tokens('userid' integer, 'token' text unique)"
+const STMT_CREATE_TABLE_TOKENS = "create table if not exists tokens('id' integer primary key, 'userid' integer, 'token' text, 'issued' integer, 'expires' integer)";
+const STMT_CREATE_TABLE_APIKEYS = "create table if not exists apikeys('userid' integer, 'apikey' text unique)"
 const STMT_CREATE_TABLE_REPORTS = "create table if not exists reports%s('id' integer primary key, 'clientid' text unique, 'time' integer, 'sequence' integer, 'message' text, 'filepath' text)"
 const STMT_INSERT_INTO_USERS = "insert or ignore into users(email, password, salt) values(?, ?, ?)"
-const STMT_INSERT_INTO_TOKENS = "insert or ignore into tokens(userid, token) values(?, ?)"
+const STMT_INSERT_INTO_TOKENS = "insert or ignore into tokens(userid, token, issued, expires) values(?, ?, ?, ?)"
+const STMT_INSERT_INTO_APIKEYS = "insert or ignore into apikeys(userid, apikey) values(?, ?)"
 const STMT_INSERT_INTO_REPORTS = "insert or ignore into reports%s(clientid, time, sequence, message, filepath) values(?, ?, ?, ?, ?)"
 
 
