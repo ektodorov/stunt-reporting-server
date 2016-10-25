@@ -3,4 +3,4 @@ Stunt server is the server application that provides the services collecting the
 <br><br>
 API Documentation is in the documentation.zip file.
 <br>
-<a href=””>Description of the project</a>
+<a href="http://techzealous.blogspot.com">Description of the project</a>
