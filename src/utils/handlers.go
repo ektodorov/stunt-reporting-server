@@ -41,6 +41,7 @@ func HandlerRoot(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
 	if err != nil {
 		ServeError(aResponseWriter, STR_MSG_404, STR_template_page_error_html);
 	} else {	
+		AddCookie(aResponseWriter, cookie.Value)
 		if aRequest.URL.Path[1:] == "templates/Content.html" && user.Email != STR_EMPTY {
 			err = templateFile.Execute(aResponseWriter, user);
 		} else {
