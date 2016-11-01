@@ -3,7 +3,7 @@
 <head>  
 
 <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
-<title>Bookmarks</title>
+<title>Reports</title>
 
 <link href="styles/styleoz.css" rel="stylesheet">
 
@@ -41,23 +41,13 @@
 <div class="contentOz">
 
 	<div class="panelOz">
+	{{range .}}
+		-{{.}}<br>
+	{{end}}
 	-sequence 0, 26.10.2016-14:20 Utils, getMessage, message=Hello there.<br>
 	-sequence 1, 26.10.2016-14:21 Utils, getMessage, message=Hi.<br>
 	-sequence 2, 26.10.2016-14:22 Utils, getMessage, message=Ready.<br>
 	-sequence 3, 26.10.2016-14:22 Utils, getMessage, message=Please enter date.<br>
-	</div>
-	
-	<div class="panelOz">
-		<a href="http://yahoo.com" style="color:#27408B; text-decoration:none;"><div class="panelTitleOz">
-			Google Search
-		</div></a>
-		<div class="panelContentOz">
-			<span style="display:inline-block; width:70px; font-weight:bold;">URL:</span><a href="http://google.com">http://google.com</a><br>
-			<span style="display:inline-block; width:70px; font-weight:bold;">Group:</span>General group<br>
-			<span style="display:inline-block; width:70px; font-weight:bold;">Note:</span>Web content such as HTML pages, JavaScript files, images and other resources is located in.
-			<br><br>
-			<button type="submit">Delete</button>
-		</div>
 	</div>
 
 </div>
