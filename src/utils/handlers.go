@@ -259,7 +259,7 @@ func HandlerLogin(responseWriter http.ResponseWriter, request *http.Request) {
 }
 
 func HandlerRegister(responseWriter http.ResponseWriter, request *http.Request) {
-	request.ParseForm();
+	request.ParseForm()
 	
 	if request.Method == STR_GET {
 		ServeRegister(responseWriter, STR_EMPTY);
@@ -285,8 +285,60 @@ func HandlerRegister(responseWriter http.ResponseWriter, request *http.Request) 
 	}
 }
 
+func HandlerApiKeys(responseWriter http.ResponseWriter, request *http.Request) {
+	request.ParseForm()
+	
+	token := GetHeaderToken(request)
+	isValid, userId := DbIsTokenValid(token, nil)
+	if !isValid {
+		ServeLogin(responseWriter, STR_MSG_login)
+		return;
+	}
+	
+	var apiKeys []string
+	apiKeys = DbGetApiKey(userId, nil)
+	
+	templateApiKeys, err := template.ParseFiles(STR_template_list_apikeys_html)
+	if err != nil {
+		log.Printf("Error parsing template %s, error=%s", STR_template_list_apikeys_html, err.Error())
+	}
+	errorExecute := templateApiKeys.Execute(responseWriter, apiKeys)
+	if errorExecute != nil {
+		log.Printf("Error executing template, %s, error=%s", STR_template_list_apikeys_html, errorExecute.Error())
+	}
+}
+
+func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
+	request.ParseForm()
+	
+	apiKey := request.Form["apiKey"]
+	strStartNum := request.Form["startNum"]
+	strPageSize := request.Form["pageSize"]
+	startNum, errStartNum := strconv.Atoi(strStartNum[0])
+	if errStartNum != nil {
+		log.Printf("Error converting %s to int, error=%s", strStartNum, errStartNum.Error())
+	}
+	pageSize, errPageSize := strconv.Atoi(strPageSize[0])
+	if errPageSize != nil {
+		log.Printf("Error converting %s to int, error=%s", strPageSize, errPageSize.Error())
+	}
+	var sliceReports []*objects.Report
+	var endNum int
+	sliceReports, endNum = DbGetReportsByApiKey(apiKey[0], "clientId", startNum, pageSize, nil)
+	log.Printf("HandlerReports, endNum=%d", endNum)
+	
+	templateReport, err := template.ParseFiles(STR_template_list_reports_for_apikey)
+	if err != nil {
+		log.Printf("Error parsing template, %s, error=%s", STR_template_list_reports_for_apikey, err.Error())
+	}
+	errorExecute := templateReport.Execute(responseWriter, sliceReports)
+	if errorExecute != nil {
+		log.Printf("Error executing template, %s, error=%s", STR_template_list_reports_for_apikey, errorExecute.Error())
+	}
+}
+
 /* Utils */
-func getHeaderToken(aRequest *http.Request) string {
+func GetHeaderToken(aRequest *http.Request) string {
 	headers := aRequest.Header
 	tokens := headers["Token"]
 	token := tokens[0]

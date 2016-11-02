@@ -32,6 +32,8 @@ const STR_templates_register_html = "templates/register.html"
 const STR_templates_Content_html = "templates/Page1.html"
 const STR_template_page_error_html = "templates/page_error.html"
 const STR_template_result = "templates/result.json"
+const STR_template_list_apikeys_html = "templates/list_apikeys.html"
+const STR_template_list_reports_for_apikey = "templates/list_reports_for_apikey.html"
 
 const STR_img_filepathSave_template = "templates/images/%s"
 const STR_img_filepathSrc_template = "images/%s"
@@ -45,6 +47,8 @@ const PATH_UPLOADFILE = "/uploadfile"
 const PATH_STATIC_TEMPLATES = "./templates"
 const PATH_Login = "/login/"
 const PATH_Register = "/register/"
+const PATH_ApiKeys = "/apikeys/"
+const PATH_Reports = "/reports/"
 const PORT_8080 = ":8080"
 
 const API_KEY_image = "image"
@@ -123,3 +127,22 @@ func GenerateToken() (string, error) {
 	token := strings.Replace(tokenuuid, STR_symbol_dash, STR_EMPTY, -1)  
 	return token, error
 }
+
+//delete if from pages.go
+//func AddCookie(responseWriter http.ResponseWriter, token string) {
+//	cookie := new(http.Cookie)
+//	cookie.Name = API_KEY_token
+//	cookie.Value = token
+//	cookie.Domain = "localhost"
+//	cookie.MaxAge = TOKEN_VALIDITY_SECONDS
+//	cookie.Path = "/"
+//	http.SetCookie(responseWriter, cookie)
+//}
+
+//delete it from handlers.go
+//func GetHeaderToken(aRequest *http.Request) string {
+//	headers := aRequest.Header
+//	tokens := headers["Token"]
+//	token := tokens[0]
+//	return token
+//}

@@ -19,6 +19,8 @@ func main() {
     http.HandleFunc(utils.PATH_UPLOADFILE, utils.HandlerUploadFile)
     http.HandleFunc(utils.PATH_Login, utils.HandlerLogin)
     http.HandleFunc(utils.PATH_Register, utils.HandlerRegister)
+    http.HandleFunc(utils.PATH_ApiKeys, utils.HandlerApiKeys)
+    http.HandleFunc(utils.PATH_Reports, utils.HandlerReports)
     http.ListenAndServe(":8080", nil)
 }
 
