@@ -44,7 +44,7 @@ func DbInit() error {
 	}
 	stmt.Close()
 	
-	
+	//init table apikeys	
 	stmt, err = db.Prepare(STMT_CREATE_TABLE_APIKEYS)
 	if err != nil {
 		log.Println("init, Error preparing, %s, err=", STMT_CREATE_TABLE_APIKEYS, err)
@@ -333,12 +333,7 @@ func DbAddToken(aUserId int, aDb *sql.DB) (token string) {
 	issued := time.Now().UnixNano() / int64(time.Millisecond)
 	expires := TOKEN_VALIDITY_MS
 	
-	tokenHash, errHash := HashSha1(token)
-	if errHash != nil {
-		fmt.Println("AddToken, Error hasing token, err=", errHash)
-	}
-	
-	_, err = db.Exec("insert or ignore into tokens(userid, token, issued, expires) values(?, ?, ?, ?)", aUserId, tokenHash, issued, expires)
+	_, err = db.Exec("insert or ignore into tokens(userid, token, issued, expires) values(?, ?, ?, ?)", aUserId, token, issued, expires)
 	if err != nil {
 		fmt.Println("AddToken, Error inserting into tokens, err=", err)
 	}
@@ -349,11 +344,6 @@ func DbIsTokenValid(aToken string, aDb *sql.DB) (isValid bool, userId int) {
 	var err error = nil
 	var db *sql.DB = aDb
 	var rows *sql.Rows = nil
-	
-	tokenHash, errHash := HashSha1(aToken)
-	if errHash != nil {
-		fmt.Println("IsTokenValid, Erro hash token, err=", errHash)
-	}
 
 	if db == nil {
 		db, err = sql.Open(DB_TYPE, DB_NAME)
@@ -382,7 +372,7 @@ func DbIsTokenValid(aToken string, aDb *sql.DB) (isValid bool, userId int) {
 		if err != nil {
 			fmt.Println("IsTokenValid, Error scan tokens, err=", err)
 		}
-		if token == tokenHash && now < (issued + expires) {
+		if token == aToken && now < (issued + expires) {
 			return true, userId;
 		}
 	}
@@ -475,7 +465,45 @@ func DbAddApiKey(aUserId int, aDb *sql.DB) bool {
 	if err != nil {
 		log.Printf("Error generateToken, error=%s", err.Error())
 	}
-	_, err = stmt.Exec(aUserId, apiKey)
+	_, err = stmt.Exec(aUserId, apiKey, apiKey)
+	if err != nil {
+		log.Printf("Error executing %s, values userId=%d, apiKey=%s, error=%s", STMT_INSERT_INTO_APIKEYS, aUserId, apiKey, err.Error())
+		if stmt != nil {stmt.Close()}
+		return false
+	}
+	if stmt != nil {stmt.Close()}
+	return true
+}
+
+func DbAddApiKeyWithAppName(aUserId int, aAppName string, aDb *sql.DB) bool {
+	var err error = nil
+	var db *sql.DB = aDb
+	var stmt *sql.Stmt = nil	
+	
+	if aUserId < 0 {
+		return false
+	}
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			log.Printf("Error opening database=%s, error=%s", DB_NAME, err.Error())
+			return false
+		}
+		defer db.Close()
+	}
+	
+	stmt, err = db.Prepare(STMT_INSERT_INTO_APIKEYS)
+	if err != nil {
+		log.Printf("Error preparing %s, error=%s", STMT_INSERT_INTO_APIKEYS, err.Error())
+	}
+	
+	var apiKey string = STR_EMPTY
+	apiKey, err = GenerateToken()
+	if err != nil {
+		log.Printf("Error generateToken, error=%s", err.Error())
+	}
+	_, err = stmt.Exec(aUserId, apiKey, aAppName)
 	if err != nil {
 		log.Printf("Error executing %s, values userId=%d, apiKey=%s, error=%s", STMT_INSERT_INTO_APIKEYS, aUserId, apiKey, err.Error())
 		if stmt != nil {stmt.Close()}

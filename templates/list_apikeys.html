@@ -5,7 +5,7 @@
 <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
 <title>API Keys</title>
 
-<link href="styles/styleoz.css" rel="stylesheet">
+<link href="../resources/styleoz.css" rel="stylesheet" type="text/css">
 
 </head>
 
@@ -42,14 +42,12 @@
 
 	<div class="panelOz">
 	{{range .}}
-		{{.}}
-		<button type="submit">Go to Reports</button><br><br><br>
+		Application Name={{.}}<br>
+		key={{.}}<br>
+		<a href="/reports?apikey={{.}}">Go to reports</a> <button type="submit">Go to Reports</button><br><br><br>
 	{{end}}
 	
-	- Application name, key=qwer1234tyui5678op90asdfghjhkjq1efgb3hb4nn5yukmj5h3b3t32
-	<button type="submit">Go to Reports</button><br><br><br>
-	- Application name, key=qwer1234tyui5678op90asdfghjhkjq1efgb3hb4nn5yukmj5h3b3t32
-	<button type="submit">Go to Reports</button><br><br><br>
+	<br>
 	- Application name, key=qwer1234tyui5678op90asdfghjhkjq1efgb3hb4nn5yukmj5h3b3t32
 	<button type="submit">Go to Reports</button><br><br><br>
 	- Application name, key=qwer1234tyui5678op90asdfghjhkjq1efgb3hb4nn5yukmj5h3b3t32

@@ -76,13 +76,3 @@ func ServeContent(responseWriter http.ResponseWriter, userName string) {
 		log.Printf("ServeContent, Error=%s", err.Error());
 	}
 }
-
-func AddCookie(responseWriter http.ResponseWriter, token string) {
-	cookie := new(http.Cookie)
-	cookie.Name = API_KEY_token
-	cookie.Value = token
-	cookie.Domain = "localhost"
-	cookie.MaxAge = TOKEN_VALIDITY_SECONDS
-	cookie.Path = "/"
-	http.SetCookie(responseWriter, cookie)
-}

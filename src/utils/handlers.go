@@ -16,41 +16,44 @@ import (
 func HandlerRoot(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
     //ServeError(aResponseWriter, STR_MSG_NOTFOUND, STR_template_page_error_html)
     
-    aRequest.ParseForm();
-	
-	cookie, errCookie := aRequest.Cookie(API_KEY_token)
-	if errCookie != nil {
-		log.Printf("handleRoot, Error reading cookie, error=%s", errCookie.Error())
-		ServeLogin(aResponseWriter, STR_MSG_login);
-		return
-	}
-	isTokenValid, userId := DbIsTokenValid(cookie.Value, nil)
-	if errCookie == nil && !isTokenValid {
-		ServeLogin(aResponseWriter, STR_MSG_login);
-		return
-	}
-	
-	user, errorUser := DbGetUserLoad(userId, nil);
-	if errorUser != nil {
-		log.Printf("errorUser=%s", errorUser.Error())
-	}
-	log.Printf("cookie.value=%s", cookie.Value)
-	
-	//Check if the file in the url path exists
-	templateFile, err := template.ParseFiles(aRequest.URL.Path[1:]);
-	if err != nil {
-		ServeError(aResponseWriter, STR_MSG_404, STR_template_page_error_html);
-	} else {	
-		AddCookie(aResponseWriter, cookie.Value)
-		if aRequest.URL.Path[1:] == "templates/Content.html" && user.Email != STR_EMPTY {
-			err = templateFile.Execute(aResponseWriter, user);
-		} else {
-			err = templateFile.Execute(aResponseWriter, nil);
-		}
-		if err != nil {
-			log.Printf("handleRoot, Error=", err.Error());
-		}
-	}
+     //must test req.URL.Path == "/" and process only then, 
+     //because this handler will be called for every path, since "/" matches all paths starting with "/"
+     
+//    aRequest.ParseForm();
+//	
+//	cookie, errCookie := aRequest.Cookie(API_KEY_token)
+//	if errCookie != nil {
+//		log.Printf("handleRoot, Error reading cookie, error=%s", errCookie.Error())
+//		ServeLogin(aResponseWriter, STR_MSG_login);
+//		return
+//	}
+//	isTokenValid, userId := DbIsTokenValid(cookie.Value, nil)
+//	if errCookie == nil && !isTokenValid {
+//		ServeLogin(aResponseWriter, STR_MSG_login);
+//		return
+//	}
+//	
+//	user, errorUser := DbGetUserLoad(userId, nil);
+//	if errorUser != nil {
+//		log.Printf("errorUser=%s", errorUser.Error())
+//	}
+//	log.Printf("cookie.value=%s", cookie.Value)
+//	
+//	//Check if the file in the url path exists
+//	templateFile, err := template.ParseFiles(aRequest.URL.Path[1:]);
+//	if err != nil {
+//		ServeError(aResponseWriter, STR_MSG_404, STR_template_page_error_html);
+//	} else {	
+//		AddCookie(aResponseWriter, cookie.Value)
+//		if aRequest.URL.Path[1:] == "templates/Content.html" && user.Email != STR_EMPTY {
+//			err = templateFile.Execute(aResponseWriter, user);
+//		} else {
+//			err = templateFile.Execute(aResponseWriter, nil);
+//		}
+//		if err != nil {
+//			log.Printf("handleRoot, Error=", err.Error());
+//		}
+//	}
 }
 
 func HandlerEcho(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
@@ -251,7 +254,7 @@ func HandlerLogin(responseWriter http.ResponseWriter, request *http.Request) {
 		if (userId > -1) {
 			token := DbAddToken(userId, nil)
 			AddCookie(responseWriter, token)
-			http.Redirect(responseWriter, request, API_URL_Content, 301)
+			http.Redirect(responseWriter, request, API_URL_list_apikeys, 301)
 		} else {
 			ServeLogin(responseWriter, "Wrong username or password");
 		}
@@ -290,6 +293,7 @@ func HandlerApiKeys(responseWriter http.ResponseWriter, request *http.Request) {
 	
 	token := GetHeaderToken(request)
 	isValid, userId := DbIsTokenValid(token, nil)
+	log.Printf("HandlerApiKeys, token=%s, isValid=%t, userId=%d", token, isValid, userId)
 	if !isValid {
 		ServeLogin(responseWriter, STR_MSG_login)
 		return;
@@ -297,6 +301,7 @@ func HandlerApiKeys(responseWriter http.ResponseWriter, request *http.Request) {
 	
 	var apiKeys []string
 	apiKeys = DbGetApiKey(userId, nil)
+	log.Printf("HandlerApiKeys, apiKeys=%s", apiKeys)
 	
 	templateApiKeys, err := template.ParseFiles(STR_template_list_apikeys_html)
 	if err != nil {
@@ -311,16 +316,31 @@ func HandlerApiKeys(responseWriter http.ResponseWriter, request *http.Request) {
 func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 	
-	apiKey := request.Form["apiKey"]
+	log.Printf("HandlerReports, url=%s" + request.URL.RawPath)
+	
+	token := GetHeaderToken(request)
+	isValid, userId := DbIsTokenValid(token, nil)
+	log.Printf("HandlerApiKeys, token=%s, isValid=%t, userId=%d", token, isValid, userId)
+	if !isValid {
+		ServeLogin(responseWriter, STR_MSG_login)
+		return;
+	}
+	
+	apiKey := request.Form["apikey"]
 	strStartNum := request.Form["startNum"]
 	strPageSize := request.Form["pageSize"]
-	startNum, errStartNum := strconv.Atoi(strStartNum[0])
-	if errStartNum != nil {
-		log.Printf("Error converting %s to int, error=%s", strStartNum, errStartNum.Error())
+	var startNum int
+	var pageSize int
+	var err error
+	startNum, err = strconv.Atoi(strStartNum[0])
+	if err != nil {
+		log.Printf("Error converting %s to int, error=%s", strStartNum, err.Error())
+		startNum = 0
 	}
-	pageSize, errPageSize := strconv.Atoi(strPageSize[0])
-	if errPageSize != nil {
-		log.Printf("Error converting %s to int, error=%s", strPageSize, errPageSize.Error())
+	pageSize, err = strconv.Atoi(strPageSize[0])
+	if err != nil {
+		log.Printf("Error converting %s to int, error=%s", strPageSize, err.Error())
+		pageSize = 10
 	}
 	var sliceReports []*objects.Report
 	var endNum int
@@ -335,12 +355,4 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 	if errorExecute != nil {
 		log.Printf("Error executing template, %s, error=%s", STR_template_list_reports_for_apikey, errorExecute.Error())
 	}
-}
-
-/* Utils */
-func GetHeaderToken(aRequest *http.Request) string {
-	headers := aRequest.Header
-	tokens := headers["Token"]
-	token := tokens[0]
-	return token
 }

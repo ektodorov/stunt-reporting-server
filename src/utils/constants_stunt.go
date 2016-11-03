@@ -4,6 +4,8 @@ import (
 	"crypto/sha1"
 	"github.com/nu7hatch/gouuid"
 	"fmt"
+	"log"
+	"net/http"
 	"math/rand"
 	"strings"
 	"time"
@@ -45,10 +47,10 @@ const PATH_MESSAGE = "/message"
 const PATH_UPLOADIMAGE = "/uploadimage"
 const PATH_UPLOADFILE = "/uploadfile"
 const PATH_STATIC_TEMPLATES = "./templates"
-const PATH_Login = "/login/"
-const PATH_Register = "/register/"
-const PATH_ApiKeys = "/apikeys/"
-const PATH_Reports = "/reports/"
+const PATH_Login = "/login"
+const PATH_Register = "/register"
+const PATH_ApiKeys = "/apikeys"
+const PATH_Reports = "/reports"
 const PORT_8080 = ":8080"
 
 const API_KEY_image = "image"
@@ -63,6 +65,7 @@ const API_KEY_email = "email"
 const API_KEY_token = "token"
 
 const API_URL_Content = "http://localhost:8080/templates/Content.html"
+const API_URL_list_apikeys = "http://localhost:8080/apikeys"
 
 const DB_TYPE = "sqlite3"
 const DB_NAME = "stunt.sqlite"
@@ -89,11 +92,11 @@ const TABLE_REPORTS_COLUMN_filepath = "filepath"
 const TABLE_REPORTS_COLUMN_id = STR_id
 const STMT_CREATE_TABLE_USERS = "create table if not exists users('id' integer primary key, 'email' text unique, 'password' text, 'salt' text)"
 const STMT_CREATE_TABLE_TOKENS = "create table if not exists tokens('id' integer primary key, 'userid' integer, 'token' text, 'issued' integer, 'expires' integer)";
-const STMT_CREATE_TABLE_APIKEYS = "create table if not exists apikeys('userid' integer, 'apikey' text unique)"
+const STMT_CREATE_TABLE_APIKEYS = "create table if not exists apikeys('userid' integer, 'apikey' text unique, 'appname' text)"
 const STMT_CREATE_TABLE_REPORTS = "create table if not exists reports%s('id' integer primary key, 'clientid' text unique, 'time' integer, 'sequence' integer, 'message' text, 'filepath' text)"
 const STMT_INSERT_INTO_USERS = "insert or ignore into users(email, password, salt) values(?, ?, ?)"
 const STMT_INSERT_INTO_TOKENS = "insert or ignore into tokens(userid, token, issued, expires) values(?, ?, ?, ?)"
-const STMT_INSERT_INTO_APIKEYS = "insert or ignore into apikeys(userid, apikey) values(?, ?)"
+const STMT_INSERT_INTO_APIKEYS = "insert or ignore into apikeys(userid, apikey, appname) values(?, ?, ?)"
 const STMT_INSERT_INTO_REPORTS = "insert or ignore into reports%s(clientid, time, sequence, message, filepath) values(?, ?, ?, ?, ?)"
 
 
@@ -128,21 +131,31 @@ func GenerateToken() (string, error) {
 	return token, error
 }
 
-//delete if from pages.go
-//func AddCookie(responseWriter http.ResponseWriter, token string) {
-//	cookie := new(http.Cookie)
-//	cookie.Name = API_KEY_token
-//	cookie.Value = token
-//	cookie.Domain = "localhost"
-//	cookie.MaxAge = TOKEN_VALIDITY_SECONDS
-//	cookie.Path = "/"
-//	http.SetCookie(responseWriter, cookie)
-//}
+func AddCookie(responseWriter http.ResponseWriter, token string) {
+	cookie := new(http.Cookie)
+	cookie.Name = API_KEY_token
+	cookie.Value = token
+	cookie.Domain = "localhost"
+	cookie.MaxAge = TOKEN_VALIDITY_SECONDS
+	cookie.Path = "/"
+	http.SetCookie(responseWriter, cookie)
+}
 
-//delete it from handlers.go
-//func GetHeaderToken(aRequest *http.Request) string {
+func GetHeaderToken(aRequest *http.Request) string {
+//We don't want to use header, because we would have to write our AJAX application, that is why we use cookies
 //	headers := aRequest.Header
 //	tokens := headers["Token"]
-//	token := tokens[0]
-//	return token
-//}
+//	var token = STR_EMPTY
+//	if(tokens != nil && len(tokens) > 0) {
+//		token = tokens[0]
+//	}
+//  return token
+	
+	cookie, errCookie := aRequest.Cookie(API_KEY_token)
+	if errCookie != nil {
+		log.Printf("GetHeaderToken, Error reading cookie, error=%s", errCookie.Error())
+		return STR_EMPTY
+	}
+	token := cookie.Value
+	return token
+}

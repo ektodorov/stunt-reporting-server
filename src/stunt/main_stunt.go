@@ -21,6 +21,10 @@ func main() {
     http.HandleFunc(utils.PATH_Register, utils.HandlerRegister)
     http.HandleFunc(utils.PATH_ApiKeys, utils.HandlerApiKeys)
     http.HandleFunc(utils.PATH_Reports, utils.HandlerReports)
+    
+    //http.Handle("/templates/", http.FileServer(http.Dir("./templates")))
+    http.Handle("/resources/", http.StripPrefix("/resources/", http.FileServer(http.Dir("./resources"))))
+    
     http.ListenAndServe(":8080", nil)
 }
 
