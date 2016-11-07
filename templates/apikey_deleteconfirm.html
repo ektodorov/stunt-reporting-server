@@ -3,7 +3,7 @@
 <head>  
 
 <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
-<title>Reports</title>
+<title>Confirm Deleting API Key</title>
 
 <link href="../resources/styleoz.css" rel="stylesheet" type="text/css">
 
@@ -31,20 +31,11 @@
 <div class="contentOz">
 
 	<div class="panelOz">
-	{{range .}}
-		id={{.Id}}, 
-		clientId={{.ClientId}}, 
-		time={{.Time}}, 
-		sequence={{.Sequence}}, 
-		message={{.Message}}, 
-		filePath={{.FilePath}}, 
-		<br>
-	{{end}}
-	
-	<br>
-	-sequence 0, 26.10.2016-14:20 Utils, getMessage, message=Hello there.<br>
-	-sequence 1, 26.10.2016-14:21 Utils, getMessage, message=Hi.<br>
-	-sequence 2, 26.10.2016-14:22 Utils, getMessage, message=Ready.<br>
+	Are you sure you want to delete:<br><br>
+	Application Name={{.AppName}}<br>
+	API Key={{.ApiKey}}<br>
+	<br><br>
+	<a href="/apikeydelete?apikey={{.ApiKey}}">Delete API Key</a>
 	</div>
 
 </div>

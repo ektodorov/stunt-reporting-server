@@ -12,29 +12,19 @@
 <body>
 
 <div class="menubar">
-	<a class="buttonMenuOz" href="#">Bookmarks</a>
-	<a class="buttonMenuOz" href="#">Notes</a>
-	<a class="buttonMenuOz" href="#">toDo</a>
-	<a class="buttonMenuOz" href="#">Reminders</a>
-
-	<a href="#" style="text-decoration:none; font-size:14px; padding:6px; margin:2px; margin-left:50px;">Log out</a>
+	<a class="buttonMenuOz" href="#">Add content here</a>
 </div>
 <br>
 <span id="bookmarks"></span>
 
 <div class="leftContentOz">
 <div class="subMenuOz">
-	<a href="bookmarks_add.html" class="buttonWhiteOz">Add Bookmark</a>
-	<a href="#" class="buttonWhiteOz">Export Bookmarks</a>
-	<a href="bookmarks_deleted.html" class="buttonWhiteOz">Deleted Bookmarks</a>
+	<a href="#" class="buttonWhiteOz">Add content here</a>
 </div>
 
 <div class="groupsOz">
-	<a href="javascript:" onclick="" class="buttonBlueOz">General Group</a>
-	<a href="javascript:{}" onclick="" class="buttonBlueOz">Stuff</a>
-	<a href="javascript:" onclick="" class="buttonBlueOz">Tools</a>
-	<a href="javascript:" onclick="" class="buttonBlueOz">News</a>
-	<a href="javascript:" onclick="" class="buttonBlueOz">Primarys very long name of a group to see what will happen to this button</a>
+	<a href="/apikeys" class="buttonBlueOz">API Keys</a>
+	<a href="/logout" class="buttonBlueOz">Log out</a>
 </div>
 </div><!--.leftContentOz-->
 
@@ -42,16 +32,15 @@
 
 	<div class="panelOz">
 	{{range .}}
-		Application Name={{.}}<br>
-		key={{.}}<br>
-		<a href="/reports?apikey={{.}}">Go to reports</a> <button type="submit">Go to Reports</button><br><br><br>
+		Application Name={{.AppName}}<br>
+		key={{.ApiKey}}<br>
+		<a href="/reports?apikey={{.ApiKey}}">Go to reports</a> <a style="padding:100px" href="/apikeydeleteconfirm?apikey={{.ApiKey}}&appname={{.AppName}}">Delete API Key</a>
+		<br><br>
 	{{end}}
+	</div>
 	
-	<br>
-	- Application name, key=qwer1234tyui5678op90asdfghjhkjq1efgb3hb4nn5yukmj5h3b3t32
-	<button type="submit">Go to Reports</button><br><br><br>
-	- Application name, key=qwer1234tyui5678op90asdfghjhkjq1efgb3hb4nn5yukmj5h3b3t32
-	<button type="submit">Go to Reports</button><br><br><br>
+	<div>
+	<a href="/apikeyadd">Add API Key</a>
 	</div>
 
 </div>

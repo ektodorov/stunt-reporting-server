@@ -3,7 +3,7 @@
 <head>  
 
 <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
-<title>Reports</title>
+<title>Add API key</title>
 
 <link href="../resources/styleoz.css" rel="stylesheet" type="text/css">
 
@@ -31,20 +31,17 @@
 <div class="contentOz">
 
 	<div class="panelOz">
-	{{range .}}
-		id={{.Id}}, 
-		clientId={{.ClientId}}, 
-		time={{.Time}}, 
-		sequence={{.Sequence}}, 
-		message={{.Message}}, 
-		filePath={{.FilePath}}, 
-		<br>
-	{{end}}
-	
-	<br>
-	-sequence 0, 26.10.2016-14:20 Utils, getMessage, message=Hello there.<br>
-	-sequence 1, 26.10.2016-14:21 Utils, getMessage, message=Hi.<br>
-	-sequence 2, 26.10.2016-14:22 Utils, getMessage, message=Ready.<br>
+	<form action="/apikeyadd" method="POST">
+
+		<div id="appname">
+			<label for="appname">Application name:</label>
+			<input type="text" name="appname">
+		</div>
+		<div class="button">
+			<br><br>
+			<button type="submit">Create API Key</button>
+		</div>
+	</form>
 	</div>
 
 </div>

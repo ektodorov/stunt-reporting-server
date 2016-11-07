@@ -299,7 +299,7 @@ func HandlerApiKeys(responseWriter http.ResponseWriter, request *http.Request) {
 		return;
 	}
 	
-	var apiKeys []string
+	var apiKeys []*objects.ApiKey
 	apiKeys = DbGetApiKey(userId, nil)
 	log.Printf("HandlerApiKeys, apiKeys=%s", apiKeys)
 	
@@ -316,43 +316,144 @@ func HandlerApiKeys(responseWriter http.ResponseWriter, request *http.Request) {
 func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 	
-	log.Printf("HandlerReports, url=%s" + request.URL.RawPath)
+	log.Printf("HandlerReports, url=%s", request.URL.RawPath)
 	
 	token := GetHeaderToken(request)
 	isValid, userId := DbIsTokenValid(token, nil)
-	log.Printf("HandlerApiKeys, token=%s, isValid=%t, userId=%d", token, isValid, userId)
+	log.Printf("HandlerReports, token=%s, isValid=%t, userId=%d", token, isValid, userId)
 	if !isValid {
 		ServeLogin(responseWriter, STR_MSG_login)
 		return;
 	}
 	
-	apiKey := request.Form["apikey"]
-	strStartNum := request.Form["startNum"]
-	strPageSize := request.Form["pageSize"]
+	var strApiKey string
 	var startNum int
 	var pageSize int
+	var strStartNum []string
+	var strPageSize []string
 	var err error
-	startNum, err = strconv.Atoi(strStartNum[0])
-	if err != nil {
-		log.Printf("Error converting %s to int, error=%s", strStartNum, err.Error())
+	apiKey := request.Form[API_KEY_apikey]
+	strStartNum = request.Form[API_KEY_startnum]
+	strPageSize = request.Form[API_KEY_pagesize]
+	if apiKey != nil && len(apiKey) > 0 {
+		strApiKey = apiKey[0]
+	} else {
+		strApiKey = STR_EMPTY
+	}
+	if strStartNum != nil && len(strStartNum) > 0 {
+		startNum, err = strconv.Atoi(strStartNum[0])
+		if err != nil {
+			log.Printf("Error converting %s to int, error=%s", strStartNum, err.Error())
+			startNum = 0
+		}
+	} else {
 		startNum = 0
 	}
-	pageSize, err = strconv.Atoi(strPageSize[0])
-	if err != nil {
-		log.Printf("Error converting %s to int, error=%s", strPageSize, err.Error())
+	if strPageSize != nil && len(strPageSize) > 0 {
+		pageSize, err = strconv.Atoi(strPageSize[0])
+		if err != nil {
+			log.Printf("Error converting %s to int, error=%s", strPageSize, err.Error())
+			pageSize = 10
+		}	
+	} else {
 		pageSize = 10
 	}
 	var sliceReports []*objects.Report
 	var endNum int
-	sliceReports, endNum = DbGetReportsByApiKey(apiKey[0], "clientId", startNum, pageSize, nil)
+	sliceReports, endNum = DbGetReportsByApiKey(strApiKey, "clientId", startNum, pageSize, nil)
 	log.Printf("HandlerReports, endNum=%d", endNum)
 	
-	templateReport, err := template.ParseFiles(STR_template_list_reports_for_apikey)
+	templateReport, err := template.ParseFiles(STR_template_list_reports_for_apikey_html)
 	if err != nil {
-		log.Printf("Error parsing template, %s, error=%s", STR_template_list_reports_for_apikey, err.Error())
+		log.Printf("Error parsing template, %s, error=%s", STR_template_list_reports_for_apikey_html, err.Error())
 	}
 	errorExecute := templateReport.Execute(responseWriter, sliceReports)
 	if errorExecute != nil {
-		log.Printf("Error executing template, %s, error=%s", STR_template_list_reports_for_apikey, errorExecute.Error())
+		log.Printf("Error executing template, %s, error=%s", STR_template_list_reports_for_apikey_html, errorExecute.Error())
 	}
+}
+
+func HandlerAddApiKey(responseWriter http.ResponseWriter, request *http.Request) {
+	request.ParseForm()
+	
+	log.Printf("HandlerAddApiKey, url=%s", request.URL.Path)
+	token := GetHeaderToken(request)
+	isValid, userId := DbIsTokenValid(token, nil)
+	log.Printf("HandlerAddApiKey, token=%s, isValid=%t, userId=%d", token, isValid, userId)
+	if !isValid {
+		ServeLogin(responseWriter, STR_MSG_login)
+		return;
+	}
+	
+	var appName string = STR_EMPTY
+	sliceAppNames := request.Form[API_KEY_appname]
+	if sliceAppNames != nil && len(sliceAppNames) > 0 {
+		appName = sliceAppNames[0]
+	} else {
+		ServeAddApiKey(responseWriter)
+		return
+	}
+	
+	log.Printf("HandlerAddApiKey, appName=%s", appName)
+	isAdded := DbAddApiKey(userId, appName, nil)
+	log.Printf("HadlerAddApiKey, isAdded=%t", isAdded)
+	if isAdded {
+		http.Redirect(responseWriter, request, API_URL_list_apikeys, 301)
+	}
+}
+
+func HandlerApiKeyDeleteConfirm(responseWriter http.ResponseWriter, request *http.Request) {
+	request.ParseForm()
+	
+	log.Printf("HandlerApiKeyDelete, url=%s", request.URL.Path)
+	isTokenValid(responseWriter, request)
+	
+	var strApiKey string = STR_EMPTY
+	var strAppName string = STR_EMPTY
+	sliceApiKeys := request.Form[API_KEY_apikey]
+	sliceAppNames := request.Form[API_KEY_appname]
+	log.Printf("HandlerApiKeyDelete, sliceApiKeys=%s, sliceApiNames=%s", sliceApiKeys, sliceAppNames)
+	if sliceApiKeys != nil && len(sliceApiKeys) > 0 {
+		strApiKey = sliceApiKeys[0]
+	} else {
+		ServeAddApiKey(responseWriter)
+		return
+	}
+	
+	if sliceAppNames != nil && len(sliceAppNames) > 0 {
+		strAppName = sliceAppNames[0]
+	}
+	
+	var apiKey *objects.ApiKey = new(objects.ApiKey)
+	apiKey.ApiKey = strApiKey
+	apiKey.AppName = strAppName
+	
+	templateDeleteConfirm, err := template.ParseFiles(STR_template_apikey_deleteconfirm_html)
+	if err != nil {
+		log.Printf("Error parsing template %s, error=%s", STR_template_apikey_deleteconfirm_html, err.Error())
+	}
+	errorExecute := templateDeleteConfirm.Execute(responseWriter, apiKey)
+	if errorExecute != nil {
+		log.Printf("Error executing template, %s, error=%s", STR_template_list_apikeys_html, errorExecute.Error())
+	}
+}
+
+func HandlerApiKeyDelete(responseWriter http.ResponseWriter, request *http.Request) {
+	request.ParseForm()
+	
+	log.Printf("HandlerApiKeyDelete, url=%s", request.URL.Path)
+	isTokenValid(responseWriter, request)
+	
+	var apiKey string = STR_EMPTY
+	sliceApiKeys := request.Form[API_KEY_apikey]
+	log.Printf("HandlerApiKeyDelete, sliceApiKeys=%s", sliceApiKeys)
+	if sliceApiKeys != nil && len(sliceApiKeys) > 0 {
+		apiKey = sliceApiKeys[0]
+	} else {
+		ServeAddApiKey(responseWriter)
+		return
+	}
+	isDeleted := DbDeleteApiKey(apiKey, nil)
+	log.Printf("HandlerApiKeyDelete, isDeleted=%t", isDeleted)
+	http.Redirect(responseWriter, request, API_URL_list_apikeys, 301)
 }

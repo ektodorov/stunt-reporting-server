@@ -50,16 +50,27 @@ func ServeLogin(responseWriter http.ResponseWriter, message string) {
 }
 
 func ServeRegister(responseWriter http.ResponseWriter, message string) {
-	registerTemplate, err := template.ParseFiles(STR_templates_register_html);
+	registerTemplate, err := template.ParseFiles(STR_templates_register_html)
 	if err != nil {
-		log.Printf("ServeRegister, Error=%s", err.Error());
+		log.Printf("ServeRegister, Error=%s", err.Error())
 	}
 	
-	msg := new(objects.MessageHolder);
-	msg.Message = message;
-	err = registerTemplate.Execute(responseWriter, msg);
+	msg := new(objects.MessageHolder)
+	msg.Message = message
+	err = registerTemplate.Execute(responseWriter, msg)
 	if err != nil {
-		log.Printf("ServeRegister, Error=%s", err.Error());
+		log.Printf("ServeRegister, Error=%s", err.Error())
+	}
+}
+
+func ServeAddApiKey(responseWriter http.ResponseWriter) {
+	addApiKeyTemplate, err := template.ParseFiles(STR_template_add_apikey_html)
+	if err != nil {
+		log.Printf("ServeAddApiKey, Error=%s", err.Error())
+	}
+	err = addApiKeyTemplate.Execute(responseWriter, nil)
+	if err != nil {
+		log.Printf("ServeAddApiKey, Error=%s", err.Error())
 	}
 }
 

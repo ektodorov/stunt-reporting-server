@@ -13,7 +13,7 @@ import (
 
 var Letters = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 const SALT_LENGTH = 32
-const TOKEN_VALIDITY_SECONDS = 60
+const TOKEN_VALIDITY_SECONDS = 60 * 60 * 24
 const TOKEN_VALIDITY_MS = TOKEN_VALIDITY_SECONDS * 1000
 
 const STR_EMPTY = ""
@@ -35,7 +35,9 @@ const STR_templates_Content_html = "templates/Page1.html"
 const STR_template_page_error_html = "templates/page_error.html"
 const STR_template_result = "templates/result.json"
 const STR_template_list_apikeys_html = "templates/list_apikeys.html"
-const STR_template_list_reports_for_apikey = "templates/list_reports_for_apikey.html"
+const STR_template_list_reports_for_apikey_html = "templates/list_reports_for_apikey.html"
+const STR_template_add_apikey_html = "templates/add_apikey.html"
+const STR_template_apikey_deleteconfirm_html = "templates/apikey_deleteconfirm.html"
 
 const STR_img_filepathSave_template = "templates/images/%s"
 const STR_img_filepathSrc_template = "images/%s"
@@ -51,6 +53,9 @@ const PATH_Login = "/login"
 const PATH_Register = "/register"
 const PATH_ApiKeys = "/apikeys"
 const PATH_Reports = "/reports"
+const PATH_AddApiKey = "/apikeyadd"
+const PATH_ApiKeyDeleteConfirm = "/apikeydeleteconfirm"
+const PATH_ApiKeyDelete = "/apikeydelete"
 const PORT_8080 = ":8080"
 
 const API_KEY_image = "image"
@@ -63,6 +68,10 @@ const API_KEY_username = "username"
 const API_KEY_password = "password"
 const API_KEY_email = "email"
 const API_KEY_token = "token"
+const API_KEY_apikey = "apikey"
+const API_KEY_startnum = "startnum"
+const API_KEY_pagesize = "pagesize"
+const API_KEY_appname = "appname"
 
 const API_URL_Content = "http://localhost:8080/templates/Content.html"
 const API_URL_list_apikeys = "http://localhost:8080/apikeys"
@@ -93,7 +102,7 @@ const TABLE_REPORTS_COLUMN_id = STR_id
 const STMT_CREATE_TABLE_USERS = "create table if not exists users('id' integer primary key, 'email' text unique, 'password' text, 'salt' text)"
 const STMT_CREATE_TABLE_TOKENS = "create table if not exists tokens('id' integer primary key, 'userid' integer, 'token' text, 'issued' integer, 'expires' integer)";
 const STMT_CREATE_TABLE_APIKEYS = "create table if not exists apikeys('userid' integer, 'apikey' text unique, 'appname' text)"
-const STMT_CREATE_TABLE_REPORTS = "create table if not exists reports%s('id' integer primary key, 'clientid' text unique, 'time' integer, 'sequence' integer, 'message' text, 'filepath' text)"
+const STMT_CREATE_TABLE_REPORTS = "create table if not exists reports%s('id' integer primary key, 'clientid' text, 'time' integer, 'sequence' integer, 'message' text, 'filepath' text)"
 const STMT_INSERT_INTO_USERS = "insert or ignore into users(email, password, salt) values(?, ?, ?)"
 const STMT_INSERT_INTO_TOKENS = "insert or ignore into tokens(userid, token, issued, expires) values(?, ?, ?, ?)"
 const STMT_INSERT_INTO_APIKEYS = "insert or ignore into apikeys(userid, apikey, appname) values(?, ?, ?)"
@@ -124,7 +133,7 @@ func GenerateRandomString(aLength int) string {
 func GenerateToken() (string, error) {
 	tokenuuid, error := GenerateUUID()
 	if error != nil {
-		return "", error
+		return STR_EMPTY, error
 	}
 	
 	token := strings.Replace(tokenuuid, STR_symbol_dash, STR_EMPTY, -1)  
@@ -158,4 +167,14 @@ func GetHeaderToken(aRequest *http.Request) string {
 	}
 	token := cookie.Value
 	return token
+}
+
+func isTokenValid(responseWriter http.ResponseWriter, request *http.Request) {
+	token := GetHeaderToken(request)
+	isValid, userId := DbIsTokenValid(token, nil)
+	log.Printf("HandlerAddApiKey, token=%s, isValid=%t, userId=%d", token, isValid, userId)
+	if !isValid {
+		ServeLogin(responseWriter, STR_MSG_login)
+		return;
+	}
 }

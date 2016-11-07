@@ -21,6 +21,9 @@ func main() {
     http.HandleFunc(utils.PATH_Register, utils.HandlerRegister)
     http.HandleFunc(utils.PATH_ApiKeys, utils.HandlerApiKeys)
     http.HandleFunc(utils.PATH_Reports, utils.HandlerReports)
+    http.HandleFunc(utils.PATH_AddApiKey, utils.HandlerAddApiKey)
+    http.HandleFunc(utils.PATH_ApiKeyDeleteConfirm, utils.HandlerApiKeyDeleteConfirm)
+    http.HandleFunc(utils.PATH_ApiKeyDelete, utils.HandlerApiKeyDelete)
     
     //http.Handle("/templates/", http.FileServer(http.Dir("./templates")))
     http.Handle("/resources/", http.StripPrefix("/resources/", http.FileServer(http.Dir("./resources"))))

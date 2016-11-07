@@ -144,7 +144,7 @@ func DbAddUser(aEmail string, aPassword string, aDb *sql.DB) (isUserExists bool,
 		if userId < 0 {
 			return isUserExists, false, nil
 		}
-		DbAddApiKey(userId, db)
+		//DbAddApiKey(userId, STR_EMPTY, db)
 		
 		return isUserExists, true, nil
 	} else {
@@ -340,6 +340,34 @@ func DbAddToken(aUserId int, aDb *sql.DB) (token string) {
 	return token
 }
 
+func DbDeleteApiKey(aApiKey string, aDb *sql.DB) (isDeleted bool) {
+	var err error = nil
+	var db *sql.DB = aDb
+	var stmt *sql.Stmt = nil
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			log.Printf("DbDeleteApiKey, Error opening db login.sqlite, err=%s", err.Error())
+			return
+		}
+		defer db.Close()
+	}
+	
+	stmt, err = db.Prepare(fmt.Sprintf("delete from %s where %s=?", TABLE_apikeys, TABLE_APIKEYS_COLUMN_apikey))
+	if err != nil {
+		log.Printf("Error preparing, delete from %s where %s=?, error=%s", TABLE_apikeys, TABLE_APIKEYS_COLUMN_apikey, err.Error())
+		return false
+	}
+	_, err = stmt.Exec(aApiKey)
+	if err != nil {
+		log.Printf("Error executing, %s, error=%s", fmt.Sprintf("delete from %s where %s=%d", TABLE_apikeys, TABLE_APIKEYS_COLUMN_apikey, aApiKey), err.Error())
+		return false
+	}
+	stmt.Close()
+	return true
+}
+
 func DbIsTokenValid(aToken string, aDb *sql.DB) (isValid bool, userId int) {
 	var err error = nil
 	var db *sql.DB = aDb
@@ -397,7 +425,7 @@ func DbCleanTokens(aUserId int, aDb *sql.DB) {
 }
 
 // Get all apiKeys of a user.
-func DbGetApiKey(aUserId int, aDb *sql.DB) []string {
+func DbGetApiKey(aUserId int, aDb *sql.DB) []*objects.ApiKey {
 	var err error = nil
 	var db *sql.DB = aDb
 	var stmt *sql.Stmt = nil
@@ -412,7 +440,7 @@ func DbGetApiKey(aUserId int, aDb *sql.DB) []string {
 		defer db.Close()
 	}
 	
-	stmt, err = db.Prepare(fmt.Sprintf("select %s from %s where %s=?", TABLE_APIKEYS_COLUMN_apikey, TABLE_apikeys, TABLE_APIKEYS_COLUMN_userid))
+	stmt, err = db.Prepare(fmt.Sprintf("select * from %s where %s=?", TABLE_apikeys, TABLE_APIKEYS_COLUMN_userid))
 	if err != nil {
 		log.Printf("Error preparing %s, error=%s", 
 			fmt.Sprintf("select %s from %s where %s=?", TABLE_APIKEYS_COLUMN_apikey, TABLE_apikeys, TABLE_APIKEYS_COLUMN_userid), err.Error())
@@ -423,11 +451,18 @@ func DbGetApiKey(aUserId int, aDb *sql.DB) []string {
 		log.Printf("Error quering, %s, error=%s", 
 			fmt.Sprintf("select %s from %s where %s=?", TABLE_APIKEYS_COLUMN_apikey, TABLE_apikeys, TABLE_APIKEYS_COLUMN_userid), err.Error())
 	}
-	var sliceApiKeys []string = make([]string, 0, 16)
+	var sliceApiKeys []*objects.ApiKey = make([]*objects.ApiKey, 0, 16)
 	for rows.Next() {
+		var userId int
 		var apiKey string
-		rows.Scan(&apiKey)
-		sliceApiKeys = append(sliceApiKeys, apiKey)
+		var appName string
+		var objApiKey  *objects.ApiKey
+		objApiKey = new(objects.ApiKey)
+		rows.Scan(&userId, &apiKey, &appName)
+		objApiKey.UserId = userId
+		objApiKey.ApiKey = apiKey
+		objApiKey.AppName = appName
+		sliceApiKeys = append(sliceApiKeys, objApiKey)
 	}
 	if rows != nil {rows.Close()}
 	if stmt != nil {stmt.Close()}
@@ -437,7 +472,7 @@ func DbGetApiKey(aUserId int, aDb *sql.DB) []string {
 
 // ApiKey is added in DbAddUser.
 // This method we can use when we want to add additional apiKeys for a user, or if the user does not have a apiKey when we present it to him.
-func DbAddApiKey(aUserId int, aDb *sql.DB) bool {
+func DbAddApiKey(aUserId int, aAppName string, aDb *sql.DB) bool {
 	var err error = nil
 	var db *sql.DB = aDb
 	var stmt *sql.Stmt = nil	
@@ -465,43 +500,8 @@ func DbAddApiKey(aUserId int, aDb *sql.DB) bool {
 	if err != nil {
 		log.Printf("Error generateToken, error=%s", err.Error())
 	}
-	_, err = stmt.Exec(aUserId, apiKey, apiKey)
-	if err != nil {
-		log.Printf("Error executing %s, values userId=%d, apiKey=%s, error=%s", STMT_INSERT_INTO_APIKEYS, aUserId, apiKey, err.Error())
-		if stmt != nil {stmt.Close()}
-		return false
-	}
-	if stmt != nil {stmt.Close()}
-	return true
-}
-
-func DbAddApiKeyWithAppName(aUserId int, aAppName string, aDb *sql.DB) bool {
-	var err error = nil
-	var db *sql.DB = aDb
-	var stmt *sql.Stmt = nil	
-	
-	if aUserId < 0 {
-		return false
-	}
-	
-	if db == nil {
-		db, err = sql.Open(DB_TYPE, DB_NAME)
-		if err != nil {
-			log.Printf("Error opening database=%s, error=%s", DB_NAME, err.Error())
-			return false
-		}
-		defer db.Close()
-	}
-	
-	stmt, err = db.Prepare(STMT_INSERT_INTO_APIKEYS)
-	if err != nil {
-		log.Printf("Error preparing %s, error=%s", STMT_INSERT_INTO_APIKEYS, err.Error())
-	}
-	
-	var apiKey string = STR_EMPTY
-	apiKey, err = GenerateToken()
-	if err != nil {
-		log.Printf("Error generateToken, error=%s", err.Error())
+	if aAppName == STR_EMPTY {
+		aAppName = apiKey
 	}
 	_, err = stmt.Exec(aUserId, apiKey, aAppName)
 	if err != nil {
@@ -605,7 +605,7 @@ func DbClearReports(aApiKey string, aDb *sql.DB) {
 
 func DbGetReportsByApiKey(aApiKey string, aClientId string, aStartNum int, aPageSize int, aDb *sql.DB) (sliceReports []*objects.Report, endNum int) {
 	endNum = aStartNum
-	sliceReports = nil
+	sliceReports = make([]*objects.Report, 0, 64)
 	var err error = nil
 	var db *sql.DB = aDb
 	var stmt *sql.Stmt = nil
@@ -626,6 +626,7 @@ func DbGetReportsByApiKey(aApiKey string, aClientId string, aStartNum int, aPage
 		log.Printf("Error preparing, %s, error=%s", 
 			fmt.Sprintf("select * from %s%s where %s > ? order by %s limit ?", TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_id),
 			err.Error())
+		return sliceReports, endNum
 	}
 	
 	rows, err = stmt.Query(aStartNum, (aStartNum + aPageSize))
@@ -633,9 +634,9 @@ func DbGetReportsByApiKey(aApiKey string, aClientId string, aStartNum int, aPage
 		log.Printf("Error quering, %s, error=%s", 
 			fmt.Sprintf("select * from %s%s where %s > ? order by %s limit ?", TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_id),
 			err.Error())
+		return sliceReports, endNum
 	}
 	
-	sliceReports = make([]*objects.Report, 0, 64)
 	for rows.Next() {
 		var id int
 		var clientId string
