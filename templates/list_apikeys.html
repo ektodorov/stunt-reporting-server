@@ -18,10 +18,6 @@
 <span id="bookmarks"></span>
 
 <div class="leftContentOz">
-<div class="subMenuOz">
-	<a href="#" class="buttonWhiteOz">Add content here</a>
-</div>
-
 <div class="groupsOz">
 	<a href="/apikeys" class="buttonBlueOz">API Keys</a>
 	<a href="/logout" class="buttonBlueOz">Log out</a>
@@ -33,8 +29,8 @@
 	<div class="panelOz">
 	{{range .}}
 		Application Name={{.AppName}}<br>
-		key={{.ApiKey}}<br>
-		<a href="/reports?apikey={{.ApiKey}}">Go to reports</a> <a style="padding:100px" href="/apikeydeleteconfirm?apikey={{.ApiKey}}&appname={{.AppName}}">Delete API Key</a>
+		key={{.ApiKey}}
+		<a style="margin-left:100px" href="/reports?apikey={{.ApiKey}}">Go to reports</a> <a style="margin-left:50px" href="/apikeydeleteconfirm?apikey={{.ApiKey}}&appname={{.AppName}}">Delete API Key</a>
 		<br><br>
 	{{end}}
 	</div>

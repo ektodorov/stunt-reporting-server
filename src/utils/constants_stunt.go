@@ -25,9 +25,10 @@ const STR_error = "error"
 const STR_Authorization = "Authorization"
 const STR_symbol_dash = "-"
 const STR_id = "id"
-const STR_MSG_404 = "404 Page not found."
-const STR_MSG_login = "Please login."
-const STR_MSG_register = "Please enter email and password."
+const STR_MSG_404 = "404 Page not found"
+const STR_MSG_login = "Please login"
+const STR_MSG_register = "Please enter email and password"
+const STR_MSG_invalidapikey = "Invalid api key"
 
 const STR_templates_login_html = "templates/login.html"
 const STR_templates_register_html = "templates/register.html"
@@ -39,9 +40,7 @@ const STR_template_list_reports_for_apikey_html = "templates/list_reports_for_ap
 const STR_template_add_apikey_html = "templates/add_apikey.html"
 const STR_template_apikey_deleteconfirm_html = "templates/apikey_deleteconfirm.html"
 
-const STR_img_filepathSave_template = "templates/images/%s"
-const STR_img_filepathSrc_template = "images/%s"
-const STR_img_filepathTemplates_template = "templates/%s"
+const STR_img_filepathSave_template = "resources/reportfiles/%s"
 
 const PATH_ROOT = "/"
 const PATH_ECHO = "/echo"
@@ -177,4 +176,9 @@ func isTokenValid(responseWriter http.ResponseWriter, request *http.Request) {
 		ServeLogin(responseWriter, STR_MSG_login)
 		return;
 	}
+}
+
+func isApiKeyValid(aApiKey string) bool {
+	
+	return false
 }

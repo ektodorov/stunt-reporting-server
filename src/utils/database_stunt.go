@@ -407,6 +407,42 @@ func DbIsTokenValid(aToken string, aDb *sql.DB) (isValid bool, userId int) {
 	return false, -1;
 }
 
+func DbIsApiKeyValid(aApiKey string, aDb *sql.DB) (isValid bool, userId int) {
+	var err error = nil
+	var db *sql.DB = aDb
+	var rows *sql.Rows = nil
+
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			log.Printf("IsTokenValid, Error opening db login.sqlite, err=%s", err.Error())
+			return false, -1
+		}
+		defer db.Close()
+	}
+	
+	rows, err = db.Query(fmt.Sprintf("select * from %s", TABLE_apikeys))
+	if err != nil {
+		log.Printf("IsTokenValid, Error select from %s, err=%s", TABLE_apikeys, err.Error())
+		return false, -1;
+	}
+	defer rows.Close()
+	for (rows.Next()) {
+		var userId int
+		var apiKey string
+		var appName string
+		err = rows.Scan(&userId, &apiKey, &appName)
+		if err != nil {
+			log.Printf("IsApiKeyValid, Error scan %s, err=%s", TABLE_apikeys, err.Error())
+		}
+		if apiKey == aApiKey {
+			return true, userId;
+		}
+	}
+	
+	return false, -1
+}
+
 func DbCleanTokens(aUserId int, aDb *sql.DB) {
 	var err error = nil
 	var db *sql.DB = aDb
@@ -513,8 +549,7 @@ func DbAddApiKey(aUserId int, aAppName string, aDb *sql.DB) bool {
 	return true
 }
 
-// Check to see if we already have reports<aApiKey> table and use it, if we do not, we have to first create it
-func DbAddReport(aUserId int, aApiKey string, aClientId string, aTime int, aSequence int, aMessage string, aFilePath string, aDb *sql.DB) {
+func DbAddReport(aApiKey string, aClientId string, aTime int, aSequence int, aMessage string, aFilePath string, aDb *sql.DB) {
 	var err error = nil
 	var db *sql.DB = aDb
 	var stmt *sql.Stmt = nil
@@ -620,8 +655,8 @@ func DbGetReportsByApiKey(aApiKey string, aClientId string, aStartNum int, aPage
 		defer db.Close()
 	}
 	
-	stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s where %s > ? order by %s limit ?",
-					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_id))
+	stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s where %s > ? order by %s, %s limit ?",
+					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id))
 	if err != nil {
 		log.Printf("Error preparing, %s, error=%s", 
 			fmt.Sprintf("select * from %s%s where %s > ? order by %s limit ?", TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_id),

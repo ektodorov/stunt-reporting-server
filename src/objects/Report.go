@@ -5,10 +5,11 @@ import (
 )
 
 type Report struct {
-	Id int
-	ClientId string
-	Time int
-	Sequence int
-	Message string
-	FilePath string
+	ApiKey string	`json:"apikey"`
+	Id int			`json:"id"`
+	ClientId string	`json:"clientid"`
+	Time int		`json:"time"`
+	Sequence int	`json:"sequence"`
+	Message string	`json:"message"`
+	FilePath string	`json:"filepath"`
 }

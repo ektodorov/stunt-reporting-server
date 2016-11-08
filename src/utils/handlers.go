@@ -98,12 +98,30 @@ func HandlerMessage(aResponseWriter http.ResponseWriter, aRequest *http.Request)
 		log.Printf("bytesBody=%s", string(bytesBody))
 	}
 	
-	headerAuthentication := aRequest.Header.Get(STR_Authorization)
-	log.Printf("headerAuthentication=%s", headerAuthentication)
+	//check Header Token
+//	headerAuthentication := aRequest.Header.Get(STR_Authorization)
+//	isValid, userId := DbIsTokenValid(headerAuthentication, nil)
+//	log.Printf("HandlerMessage, headerAuthentication=%s, isValid=%t, userId=%d", headerAuthentication, isValid, userId)
+//	if !isValid {
+//		result := new(objects.Result)
+//		result.ErrorMessage = STR_MSG_login
+//		result.ResultCode = http.StatusOK
+//		ServeResult(aResponseWriter, result, STR_template_result)
+//		return
+//	}
 	
-	reportMessage := new(objects.ReportMessage)
-	json.Unmarshal(bytesBody, reportMessage)
-	log.Printf("report.Message=%s, report.Sequence=%d, report.Time=%d", reportMessage.Message, reportMessage.Sequence, reportMessage.Time)
+	report := new(objects.Report)
+	json.Unmarshal(bytesBody, report)
+	log.Printf("report.ApiKey=%s, report.ClientId=%s, report.Message=%s, report.Sequence=%d, report.Time=%d", 
+			report.ApiKey, report.ClientId, report.Message, report.Sequence, report.Time)
+	if report.ApiKey == STR_EMPTY {
+		result := new(objects.Result)
+		result.ErrorMessage = STR_MSG_invalidapikey
+		result.ResultCode = http.StatusOK
+		ServeResult(aResponseWriter, result, STR_template_result)
+		return
+	}
+	DbAddReport(report.ApiKey, report.ClientId, report.Time, report.Sequence, report.Message, report.FilePath, nil) 
 	
 	result := new(objects.Result)
 	result.ErrorMessage = STR_EMPTY
@@ -128,9 +146,21 @@ func HandlerUploadImage(aResponseWriter http.ResponseWriter, aRequest *http.Requ
 //		valuesMap := myform.Value //map[string][]string
 //		arrayMessage := valuesMap["message"]
 //		log.Printf("arrayMessage=%d", len(arrayMessage))
-		
+
+		//Check ApiKey
 		strMessage := aRequest.FormValue(API_KEY_message)
 		log.Printf("strMessage=%s", strMessage)
+		report := new(objects.Report)
+		json.Unmarshal([]byte(strMessage), report)
+		log.Printf("report.ApiKey=%s, report.ClientId=%s, report.Message=%s, report.Sequence=%d, report.Time=%d", 
+				report.ApiKey, report.ClientId, report.Message, report.Sequence, report.Time)
+		if report.ApiKey == STR_EMPTY {
+			result := new(objects.Result)
+			result.ErrorMessage = STR_MSG_invalidapikey
+			result.ResultCode = http.StatusOK
+			ServeResult(aResponseWriter, result, STR_template_result)
+			return
+		}
 	
 		//get file part
 		multipartFile, multipartFileHeader, err := aRequest.FormFile(API_KEY_image)
@@ -169,8 +199,11 @@ func HandlerUploadImage(aResponseWriter http.ResponseWriter, aRequest *http.Requ
 			log.Printf("Erro copying file, errWrite=%s", errWrite.Error())
 			return
 		}
-	
 		log.Printf("Bytes written=%d", written)
+		
+		//add report to Database
+		report.FilePath = imageFilePath
+		DbAddReport(report.ApiKey, report.ClientId, report.Time, report.Sequence, report.Message, report.FilePath, nil) 
 		
 		result := new(objects.Result)
 		result.ErrorMessage = STR_EMPTY
@@ -187,6 +220,26 @@ func HandlerUploadFile(aResponseWriter http.ResponseWriter, aRequest *http.Reque
 		result.ResultCode = http.StatusMethodNotAllowed
 		ServeResult(aResponseWriter, result, STR_template_result)
 	} else if requestMethod == STR_POST {
+		//get message part
+		errorParse := aRequest.ParseMultipartForm(8388608)
+		if errorParse != nil {
+			log.Printf("errorParse=%s", errorParse.Error())
+		}		
+		//Check ApiKey
+		strMessage := aRequest.FormValue(API_KEY_message)
+		log.Printf("strMessage=%s", strMessage)
+		report := new(objects.Report)
+		json.Unmarshal([]byte(strMessage), report)
+		log.Printf("report.ApiKey=%s, report.ClientId=%s, report.Message=%s, report.Sequence=%d, report.Time=%d", 
+				report.ApiKey, report.ClientId, report.Message, report.Sequence, report.Time)
+		if report.ApiKey == STR_EMPTY {
+			result := new(objects.Result)
+			result.ErrorMessage = STR_MSG_invalidapikey
+			result.ResultCode = http.StatusOK
+			ServeResult(aResponseWriter, result, STR_template_result)
+			return
+		}
+		
 		multipartFile, multipartFileHeader, err := aRequest.FormFile(API_KEY_file)
 		if err != nil {
 			log.Printf("Error getting file from FormFile, err=%s", err.Error())
@@ -198,20 +251,20 @@ func HandlerUploadFile(aResponseWriter http.ResponseWriter, aRequest *http.Reque
 		}
 		defer multipartFile.Close()
 	
-		imageFilePath := fmt.Sprintf(STR_img_filepathSave_template, multipartFileHeader.Filename)
-		fileName := imageFilePath[0:(len(imageFilePath) - 4)]
-		fileExstension := imageFilePath[(len(imageFilePath) - 4):len(imageFilePath)]
+		filePath := fmt.Sprintf(STR_img_filepathSave_template, multipartFileHeader.Filename)
+		fileName := filePath[0:(len(filePath) - 4)]
+		fileExstension := filePath[(len(filePath) - 4):len(filePath)]
 		fileNum := 0;
 		var errorFileExists error
-		_, errorFileExists = os.Stat(imageFilePath)
+		_, errorFileExists = os.Stat(filePath)
 		for(!os.IsNotExist(errorFileExists)) {
 			fileNum++
-			imageFilePath = fileName + strconv.Itoa(fileNum) + fileExstension
-			_, errorFileExists = os.Stat(imageFilePath)
+			filePath = fileName + strconv.Itoa(fileNum) + fileExstension
+			_, errorFileExists = os.Stat(filePath)
 		}
-		log.Printf("imageFilePath=%s", imageFilePath)
+		log.Printf("filePath=%s", filePath)
 		
-		fileOut, errOut := os.Create(imageFilePath)
+		fileOut, errOut := os.Create(filePath)
 		if errOut != nil {
 			log.Printf("Error creating fileOut, errOut=%s", errOut.Error())
 			return
@@ -223,8 +276,12 @@ func HandlerUploadFile(aResponseWriter http.ResponseWriter, aRequest *http.Reque
 			log.Printf("Erro copying file, errWrite=%s", errWrite.Error())
 			return
 		}
-	
 		log.Printf("Bytes written=%d", written)
+		
+		//add report to Database
+		report.FilePath = filePath
+		DbAddReport(report.ApiKey, report.ClientId, report.Time, report.Sequence, report.Message, report.FilePath, nil)
+		
 		result := new(objects.Result)
 		result.ErrorMessage = STR_EMPTY
 		result.ResultCode = http.StatusOK
