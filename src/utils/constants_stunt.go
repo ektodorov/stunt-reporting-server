@@ -15,6 +15,7 @@ var Letters = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV
 const SALT_LENGTH = 32
 const TOKEN_VALIDITY_SECONDS = 60 * 60 * 24
 const TOKEN_VALIDITY_MS = TOKEN_VALIDITY_SECONDS * 1000
+const REPORTS_PAGE_SIZE = 2
 
 const STR_EMPTY = ""
 const STR_BLANK = " "
@@ -69,6 +70,7 @@ const API_KEY_email = "email"
 const API_KEY_token = "token"
 const API_KEY_apikey = "apikey"
 const API_KEY_startnum = "startnum"
+const API_KEY_pagenum = "pagenum"
 const API_KEY_pagesize = "pagesize"
 const API_KEY_appname = "appname"
 

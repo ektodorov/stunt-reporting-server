@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"objects"
+	"regexp"
 	"strconv"
 	"html/template"
 )
@@ -385,46 +386,72 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 	
 	var strApiKey string
 	var startNum int
+	var pageNum int
 	var pageSize int
-	var strStartNum []string
+	var strPageNum []string
 	var strPageSize []string
 	var err error
 	apiKey := request.Form[API_KEY_apikey]
-	strStartNum = request.Form[API_KEY_startnum]
+	strPageNum = request.Form[API_KEY_pagenum]
 	strPageSize = request.Form[API_KEY_pagesize]
 	if apiKey != nil && len(apiKey) > 0 {
 		strApiKey = apiKey[0]
 	} else {
 		strApiKey = STR_EMPTY
 	}
-	if strStartNum != nil && len(strStartNum) > 0 {
-		startNum, err = strconv.Atoi(strStartNum[0])
+	if strPageNum != nil && len(strPageNum) > 0 {
+		regex, errRegEx := regexp.Compile("[^0-9]")
+		if errRegEx != nil {
+			log.Printf("HandlerReports, errRegEx=%s", errRegEx.Error())
+		}
+		strPage := regex.ReplaceAllString(strPageNum[0], STR_EMPTY)
+		log.Printf("HandlerReports, strPageNum[0]=%s, strPage=%s", strPageNum[0], strPage)		
+		pageNum, err = strconv.Atoi(strPage)
 		if err != nil {
-			log.Printf("Error converting %s to int, error=%s", strStartNum, err.Error())
-			startNum = 0
+			log.Printf("Error converting %s to int, error=%s", strPageNum, err.Error())
+			pageNum = 0
 		}
 	} else {
-		startNum = 0
+		pageNum = 0
 	}
 	if strPageSize != nil && len(strPageSize) > 0 {
 		pageSize, err = strconv.Atoi(strPageSize[0])
 		if err != nil {
 			log.Printf("Error converting %s to int, error=%s", strPageSize, err.Error())
-			pageSize = 10
+			pageSize = REPORTS_PAGE_SIZE
 		}	
 	} else {
-		pageSize = 10
+		pageSize = REPORTS_PAGE_SIZE
 	}
 	var sliceReports []*objects.Report
 	var endNum int
-	sliceReports, endNum = DbGetReportsByApiKey(strApiKey, "clientId", startNum, pageSize, nil)
-	log.Printf("HandlerReports, endNum=%d", endNum)
+	startNum = pageNum * pageSize
+	sliceReports, endNum = DbGetReportsByApiKey(strApiKey, startNum, pageSize, nil)
+	log.Printf("HandlerReports, startNum=%d, endNum=%d, pageNum=%d, pageSize=%d", startNum, endNum, pageNum, pageSize)
 	
 	templateReport, err := template.ParseFiles(STR_template_list_reports_for_apikey_html)
 	if err != nil {
 		log.Printf("Error parsing template, %s, error=%s", STR_template_list_reports_for_apikey_html, err.Error())
 	}
-	errorExecute := templateReport.Execute(responseWriter, sliceReports)
+	//errorExecute := templateReport.Execute(responseWriter, sliceReports)
+	var templateData = struct {
+							Reports []*objects.Report 
+							ApiKey string
+							PageNumStart int
+							PageNumPrevious int
+							PageNumNext int
+							PageNumLast int
+							ReportLast *objects.Report
+							}{
+								sliceReports, 
+								strApiKey,
+								pageNum,
+								(pageNum - 1),
+								(pageNum + 1),
+								-1,
+								sliceReports[len(sliceReports) - 1],
+							}
+	errorExecute := templateReport.Execute(responseWriter, templateData)
 	if errorExecute != nil {
 		log.Printf("Error executing template, %s, error=%s", STR_template_list_reports_for_apikey_html, errorExecute.Error())
 	}

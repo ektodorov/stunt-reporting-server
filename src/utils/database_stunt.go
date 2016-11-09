@@ -638,7 +638,7 @@ func DbClearReports(aApiKey string, aDb *sql.DB) {
 	stmt.Close()
 }
 
-func DbGetReportsByApiKey(aApiKey string, aClientId string, aStartNum int, aPageSize int, aDb *sql.DB) (sliceReports []*objects.Report, endNum int) {
+func DbGetReportsByApiKey(aApiKey string, aStartNum int, aPageSize int, aDb *sql.DB) (sliceReports []*objects.Report, endNum int) {
 	endNum = aStartNum
 	sliceReports = make([]*objects.Report, 0, 64)
 	var err error = nil
@@ -655,19 +655,21 @@ func DbGetReportsByApiKey(aApiKey string, aClientId string, aStartNum int, aPage
 		defer db.Close()
 	}
 	
-	stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s where %s > ? order by %s, %s limit ?",
-					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id))
+	stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
+					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id))
 	if err != nil {
 		log.Printf("Error preparing, %s, error=%s", 
-			fmt.Sprintf("select * from %s%s where %s > ? order by %s limit ?", TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_id),
+			fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
+					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id),
 			err.Error())
 		return sliceReports, endNum
 	}
 	
-	rows, err = stmt.Query(aStartNum, (aStartNum + aPageSize))
+	rows, err = stmt.Query(aStartNum, aPageSize)
 	if err != nil {
 		log.Printf("Error quering, %s, error=%s", 
-			fmt.Sprintf("select * from %s%s where %s > ? order by %s limit ?", TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_id),
+			fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
+					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id),
 			err.Error())
 		return sliceReports, endNum
 	}
@@ -696,4 +698,143 @@ func DbGetReportsByApiKey(aApiKey string, aClientId string, aStartNum int, aPage
 	if stmt != nil {stmt.Close()}
 	
 	return sliceReports, endNum
+}
+
+func DbGetReports(aApiKey string, aId int, aPageSize int, aDb *sql.DB) (sliceReports []*objects.Report) {
+	sliceReports = make([]*objects.Report, 0, 64)
+	var err error = nil
+	var db *sql.DB = aDb
+	var stmt *sql.Stmt = nil
+	var rows *sql.Rows = nil
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			log.Printf("Error opening database=%s, error=%s", DB_NAME, err.Error())
+			return
+		}
+		defer db.Close()
+	}
+	
+	stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s where %s > ? order by %s, %s limit ?",
+					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id))
+	if err != nil {
+		log.Printf("Error preparing, %s, error=%s", 
+			fmt.Sprintf("select * from %s%s where %s > ? order by %s, %s limit ?",
+					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id),
+			err.Error())
+		return sliceReports
+	}
+	
+	rows, err = stmt.Query(aId, aPageSize)
+	if err != nil {
+		log.Printf("Error quering, %s, error=%s", 
+			fmt.Sprintf("select * from %s%s where %s > ? order by %s, %s limit ?",
+					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_id, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id),
+			err.Error())
+		return sliceReports
+	}
+	
+	for rows.Next() {
+		var id int
+		var clientId string
+		var time int
+		var sequence int
+		var message string
+		var filePath string
+		err = rows.Scan(&id, &clientId, &time, &sequence, &message, &filePath)
+		if err != nil {
+			log.Printf("Error scanning, error=%s", err.Error())
+		}
+		var report = new(objects.Report)
+		report.Id = id
+		report.ClientId = clientId
+		report.Time = time
+		report.Message = message
+		report.FilePath = filePath
+		sliceReports = append(sliceReports, report)
+	}
+	if rows != nil {rows.Close()}
+	if stmt != nil {stmt.Close()}
+	
+	return sliceReports
+}
+
+func DbGetReportsLastPage(aApiKey string, aPageSize int, aDb *sql.DB) (sliceReports []*objects.Report) {
+	sliceReports = make([]*objects.Report, 0, 64)
+	var err error = nil
+	var db *sql.DB = aDb
+	var stmt *sql.Stmt = nil
+	var rows *sql.Rows = nil
+	var result sql.Result = nil
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			log.Printf("Error opening database=%s, error=%s", DB_NAME, err.Error())
+			return
+		}
+		defer db.Close()
+	}
+	
+	stmt, err = db.Prepare(fmt.Sprintf("select Count(*) from %s%s",TABLE_reports, aApiKey))
+	if err != nil {
+		log.Printf("Error preparing, %s, error=%s", 
+			fmt.Sprintf("select Count(*) from %s%s",TABLE_reports, aApiKey), err.Error())
+		return sliceReports
+	}
+	
+	result, err = stmt.Exec()
+	if err != nil {
+		log.Printf("Error quering, %s, error=%s", fmt.Sprintf("select Count(*) from %s%s", TABLE_reports, aApiKey), err.Error())
+		return sliceReports
+	}
+	rowCount, errResult := result.RowsAffected()
+	stmt.Close()
+	if errResult != nil {
+		log.Printf("Error quering result.RowsAffected, error=%s", errResult.Error())
+	}
+	
+	stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
+					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id))
+	if err != nil {
+		log.Printf("Error preparing, %s, error=%s", 
+			fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
+					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id),
+			err.Error())
+		return sliceReports
+	}
+	
+	rows, err = stmt.Query((rowCount - int64(aPageSize)), aPageSize)
+	if err != nil {
+		log.Printf("Error quering, %s, error=%s", 
+			fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
+					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id),
+			err.Error())
+		return sliceReports
+	}
+	
+	for rows.Next() {
+		var id int
+		var clientId string
+		var time int
+		var sequence int
+		var message string
+		var filePath string
+		err = rows.Scan(&id, &clientId, &time, &sequence, &message, &filePath)
+		if err != nil {
+			log.Printf("Error scanning, error=%s", err.Error())
+		}
+		var report = new(objects.Report)
+		report.Id = id
+		report.ClientId = clientId
+		report.Time = time
+		report.Message = message
+		report.FilePath = filePath
+		sliceReports = append(sliceReports, report)
+	}
+	if rows != nil {rows.Close()}
+	if stmt != nil {stmt.Close()}
+	
+	return sliceReports
 }

@@ -27,7 +27,7 @@
 <div class="contentOz">
 
 	<div class="panelOz">
-	{{range .}}
+	{{range .Reports}}
 		id={{.Id}}, 
 		clientId={{.ClientId}}, 
 		time={{.Time}}, 
@@ -42,6 +42,26 @@
 	-sequence 1, 26.10.2016-14:21 Utils, getMessage, message=Hi.<br>
 	-sequence 2, 26.10.2016-14:22 Utils, getMessage, message=Ready.<br>
 	</div>
+	
+	<form action="/reports" method="POST">
+
+		<a href="/reports?apikey={{.ApiKey}}&pagenum=0">&lt;&lt; Beginning</a>
+		&nbsp;&nbsp;&nbsp;&nbsp;
+
+		<a href="/reports?apikey={{.ApiKey}}&pagenum={{.PageNumPrevious}}">&lt; Previous</a>
+		&nbsp;&nbsp;&nbsp;&nbsp;
+
+		<a href="/reports?apikey={{.ApiKey}}&pagenum={{.PageNumNext}}">Next &gt;</a>
+		&nbsp;&nbsp;&nbsp;&nbsp;
+
+		<a href="/reports?apikey={{.ApiKey}}&pagenum={{.PageNumLast}}">End &gt;&gt;</a>
+		&nbsp;&nbsp;&nbsp;&nbsp;
+
+		<textarea rows="1" cols="10" name="pagenum">{{.PageNumStart}}</textarea>
+		<input type="hidden" name="apikey", value="{{.ApiKey}}">
+		<input type="hidden" name="idlast", value="{{.ReportLast.Id}}">
+		<input type="submit" value="Go to page">
+	</form>
 
 </div>
 
