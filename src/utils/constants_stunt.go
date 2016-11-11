@@ -83,6 +83,7 @@ const TABLE_users = "users"
 const TABLE_tokens = "tokens"
 const TABLE_apikeys = "apikeys"
 const TABLE_reports = "reports"
+const TABLE_clientinfo = "clientinfo"
 const TABLE_USERS_COLUMN_id = STR_id
 const TABLE_USERS_COLUMN_email = "email"
 const TABLE_USERS_COLUMN_password = "password"
@@ -100,14 +101,21 @@ const TABLE_REPORTS_COLUMN_sequence = "sequence"
 const TABLE_REPORTS_COLUMN_message = "message"
 const TABLE_REPORTS_COLUMN_filepath = "filepath"
 const TABLE_REPORTS_COLUMN_id = STR_id
+const TABLE_CLIENTINFO_clientid = "clientid"
+const TABLE_CLIENTINFO_name = "name"
+const TABLE_CLIENTINFO_manufacturer = "manufacturer"
+const TABLE_CLIENTINFO_model = "model"
+const TABLE_CLIENTINFO_deviceid = "deviceid"
 const STMT_CREATE_TABLE_USERS = "create table if not exists users('id' integer primary key, 'email' text unique, 'password' text, 'salt' text)"
 const STMT_CREATE_TABLE_TOKENS = "create table if not exists tokens('id' integer primary key, 'userid' integer, 'token' text, 'issued' integer, 'expires' integer)";
 const STMT_CREATE_TABLE_APIKEYS = "create table if not exists apikeys('userid' integer, 'apikey' text unique, 'appname' text)"
 const STMT_CREATE_TABLE_REPORTS = "create table if not exists reports%s('id' integer primary key, 'clientid' text, 'time' integer, 'sequence' integer, 'message' text, 'filepath' text)"
+const STMT_CREATE_TABLE_CLIENTINFO = "create table if not exists clientinfo%s('clientid' text unique, 'name' text, 'manufacturer' text, 'model' text, 'deviceid' text)"
 const STMT_INSERT_INTO_USERS = "insert or ignore into users(email, password, salt) values(?, ?, ?)"
 const STMT_INSERT_INTO_TOKENS = "insert or ignore into tokens(userid, token, issued, expires) values(?, ?, ?, ?)"
 const STMT_INSERT_INTO_APIKEYS = "insert or ignore into apikeys(userid, apikey, appname) values(?, ?, ?)"
 const STMT_INSERT_INTO_REPORTS = "insert or ignore into reports%s(clientid, time, sequence, message, filepath) values(?, ?, ?, ?, ?)"
+const STMT_INSERT_INTO_CLIENTINFO = "insert or ignore into clientinfo%s(clientid, name, manufacturer, model, deviceid) values(?, ?, ?, ?, ?)"
 
 
 func HashSha1(aValue string) (string, error) {

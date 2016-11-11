@@ -400,7 +400,7 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 		strApiKey = STR_EMPTY
 	}
 	if strPageNum != nil && len(strPageNum) > 0 {
-		regex, errRegEx := regexp.Compile("[^0-9]")
+		regex, errRegEx := regexp.Compile("[^-][^0-9]")
 		if errRegEx != nil {
 			log.Printf("HandlerReports, errRegEx=%s", errRegEx.Error())
 		}
@@ -424,10 +424,34 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 		pageSize = REPORTS_PAGE_SIZE
 	}
 	var sliceReports []*objects.Report
-	var endNum int
-	startNum = pageNum * pageSize
-	sliceReports, endNum = DbGetReportsByApiKey(strApiKey, startNum, pageSize, nil)
-	log.Printf("HandlerReports, startNum=%d, endNum=%d, pageNum=%d, pageSize=%d", startNum, endNum, pageNum, pageSize)
+	
+	if(pageNum < 0) {
+		var rowCount int64
+		sliceReports, rowCount = DbGetReportsLastPage(strApiKey, pageSize, nil)
+		pageNum = int(rowCount / int64(pageSize))
+		log.Printf("HandlerReports, startNum=%d, pageNum=%d, pageSize=%d", startNum, pageNum, pageSize)
+	} else {
+		startNum = pageNum * pageSize
+		var endNum int
+		sliceReports, endNum = DbGetReportsByApiKey(strApiKey, startNum, pageSize, nil)
+		log.Printf("HandlerReports, startNum=%d, endNum=%d, pageNum=%d, pageSize=%d", startNum, endNum, pageNum, pageSize)
+	}
+	var pagePrevious int
+	var pageNext int
+	var reportLast *objects.Report
+	length := len(sliceReports)
+	if length == 0 || length < pageSize {
+		pagePrevious = pageNum - 1
+		pageNext = -1
+	} else {
+		pagePrevious = pageNum - 1
+		pageNext = pageNum + 1
+	}
+	if length == 0 {
+		reportLast = nil
+	} else {
+		reportLast = sliceReports[len(sliceReports) - 1]
+	}
 	
 	templateReport, err := template.ParseFiles(STR_template_list_reports_for_apikey_html)
 	if err != nil {
@@ -446,10 +470,10 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 								sliceReports, 
 								strApiKey,
 								pageNum,
-								(pageNum - 1),
-								(pageNum + 1),
+								pagePrevious,
+								pageNext,
 								-1,
-								sliceReports[len(sliceReports) - 1],
+								reportLast,
 							}
 	errorExecute := templateReport.Execute(responseWriter, templateData)
 	if errorExecute != nil {

@@ -54,6 +54,7 @@ func DbInit() error {
 		log.Println("init, Error executing, %s, err=",STMT_CREATE_TABLE_APIKEYS, err)
 	}
 	stmt.Close();
+	
 	return nil
 }
 
@@ -549,6 +550,110 @@ func DbAddApiKey(aUserId int, aAppName string, aDb *sql.DB) bool {
 	return true
 }
 
+func DbAddClientInfo(aApiKey string, aClientId string, aName string, aManufacturer string, aModel string, aDeviceId string, aDb *sql.DB) {
+	var err error = nil
+	var db *sql.DB = aDb
+	var stmt *sql.Stmt = nil
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			log.Printf("Error opening database=%s, error=%s", DB_NAME, err.Error())
+			return
+		}
+		defer db.Close()
+	}	
+	
+	stmt, err = db.Prepare(fmt.Sprintf(STMT_CREATE_TABLE_CLIENTINFO, aApiKey))
+	if err != nil {
+		log.Printf("Error creating, %s, error=%s", fmt.Sprintf(STMT_CREATE_TABLE_CLIENTINFO, aApiKey), err.Error())
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		log.Printf("Error executing, %s, error=%s", fmt.Sprintf(STMT_CREATE_TABLE_CLIENTINFO, aApiKey), err.Error())
+	}
+	if stmt != nil {stmt.Close()}
+	
+	stmt, err = db.Prepare(fmt.Sprintf(STMT_INSERT_INTO_CLIENTINFO, aApiKey))
+	if err != nil {
+		log.Printf("Error preparing, %s, error=%s", fmt.Sprintf(STMT_INSERT_INTO_CLIENTINFO, aApiKey), err.Error())
+	}
+	_, err = stmt.Exec(aClientId, aName, aManufacturer, aModel, aDeviceId)
+	if err != nil {
+		log.Printf("Error executing, %s, error=%s", fmt.Sprintf(STMT_INSERT_INTO_CLIENTINFO, aApiKey), err.Error())
+	}
+	if stmt != nil {stmt.Close()}
+}
+
+func DbDeleteClientInfo(aApiKey string, aClientId string, aDb *sql.DB) (isDeleted bool) {
+	var err error = nil
+	var db *sql.DB = aDb
+	var stmt *sql.Stmt = nil
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			log.Printf("DbDeleteApiKey, Error opening db login.sqlite, err=%s", err.Error())
+			return
+		}
+		defer db.Close()
+	}
+	
+	stmt, err = db.Prepare(fmt.Sprintf("delete from %s%s where %s=?", TABLE_clientinfo, aApiKey, TABLE_CLIENTINFO_clientid))
+	if err != nil {
+		log.Printf("Error preparing, %s", fmt.Sprintf("delete from %s%s where %s=?", TABLE_clientinfo, aApiKey, TABLE_CLIENTINFO_clientid), err.Error())
+		return false
+	}
+	_, err = stmt.Exec(aClientId)
+	if err != nil {
+		log.Printf("Error executing, %s, error=%s", fmt.Sprintf("delete from %s%s where %s=?", TABLE_clientinfo, aApiKey, TABLE_CLIENTINFO_clientid), err.Error())
+		return false
+	}
+	if stmt != nil {stmt.Close()}
+	return true
+}
+
+func DbGetClientInfo(aApiKey string, aClientId string, aDb *sql.DB) *objects.ClientInfo {
+	var err error = nil
+	var db *sql.DB = aDb
+	var stmt *sql.Stmt = nil
+	var row *sql.Row = nil
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			log.Printf("DbDeleteApiKey, Error opening db login.sqlite, err=%s", err.Error())
+			return nil
+		}
+		defer db.Close()
+	}
+	
+	stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s where %s=?", TABLE_clientinfo, aApiKey, TABLE_CLIENTINFO_clientid))
+	if err != nil {
+		log.Printf("Error preparing, %s", fmt.Sprintf("select * from %s%s where %s=?", TABLE_clientinfo, aApiKey, TABLE_CLIENTINFO_clientid), err.Error())
+		return nil
+	}
+	row = stmt.QueryRow(aClientId) 
+	var name string
+	var manufacturer string
+	var model string
+	var deviceId string
+	err = row.Scan(&name, &manufacturer, &model, &deviceId)
+	if err != nil {
+		log.Printf("Error executing, %s, error=%s", fmt.Sprintf("select * from %s%s where %s=?", TABLE_clientinfo, aApiKey, TABLE_CLIENTINFO_clientid), err.Error())
+		return nil
+	}
+	clientInfo := new(objects.ClientInfo)
+	clientInfo.Name = name
+	clientInfo.Manufacturer = manufacturer
+	clientInfo.Model = model
+	clientInfo.DeviceId = deviceId
+	
+	if stmt != nil {stmt.Close()}
+	
+	return clientInfo
+}
+
 func DbAddReport(aApiKey string, aClientId string, aTime int, aSequence int, aMessage string, aFilePath string, aDb *sql.DB) {
 	var err error = nil
 	var db *sql.DB = aDb
@@ -583,7 +688,6 @@ func DbAddReport(aApiKey string, aClientId string, aTime int, aSequence int, aMe
 	}
 	if stmt != nil {stmt.Close()}
 }
-
 
 func DbDeleteReport(aApiKey string, aId int, aDb *sql.DB) {
 	var err error = nil
@@ -689,6 +793,7 @@ func DbGetReportsByApiKey(aApiKey string, aStartNum int, aPageSize int, aDb *sql
 		report.Id = id
 		report.ClientId = clientId
 		report.Time = time
+		report.Sequence = sequence
 		report.Message = message
 		report.FilePath = filePath
 		sliceReports = append(sliceReports, report)
@@ -750,6 +855,7 @@ func DbGetReports(aApiKey string, aId int, aPageSize int, aDb *sql.DB) (sliceRep
 		report.Id = id
 		report.ClientId = clientId
 		report.Time = time
+		report.Sequence = sequence
 		report.Message = message
 		report.FilePath = filePath
 		sliceReports = append(sliceReports, report)
@@ -760,13 +866,13 @@ func DbGetReports(aApiKey string, aId int, aPageSize int, aDb *sql.DB) (sliceRep
 	return sliceReports
 }
 
-func DbGetReportsLastPage(aApiKey string, aPageSize int, aDb *sql.DB) (sliceReports []*objects.Report) {
+func DbGetReportsLastPage(aApiKey string, aPageSize int, aDb *sql.DB) (sliceReports []*objects.Report, count int64) {
 	sliceReports = make([]*objects.Report, 0, 64)
 	var err error = nil
 	var db *sql.DB = aDb
 	var stmt *sql.Stmt = nil
 	var rows *sql.Rows = nil
-	var result sql.Result = nil
+	var rowCount int64 = 0
 	
 	if db == nil {
 		db, err = sql.Open(DB_TYPE, DB_NAME)
@@ -781,19 +887,23 @@ func DbGetReportsLastPage(aApiKey string, aPageSize int, aDb *sql.DB) (sliceRepo
 	if err != nil {
 		log.Printf("Error preparing, %s, error=%s", 
 			fmt.Sprintf("select Count(*) from %s%s",TABLE_reports, aApiKey), err.Error())
-		return sliceReports
+		return sliceReports, rowCount
 	}
 	
-	result, err = stmt.Exec()
+	rows, err = stmt.Query()
 	if err != nil {
 		log.Printf("Error quering, %s, error=%s", fmt.Sprintf("select Count(*) from %s%s", TABLE_reports, aApiKey), err.Error())
-		return sliceReports
+		return sliceReports, rowCount
 	}
-	rowCount, errResult := result.RowsAffected()
-	stmt.Close()
-	if errResult != nil {
-		log.Printf("Error quering result.RowsAffected, error=%s", errResult.Error())
+	for rows.Next() {
+		err = rows.Scan(&rowCount)
+		if err != nil {
+			log.Printf("Error scanning, error=%s", err.Error())
+		}
 	}
+	log.Printf("DbGetReportsLastPage, rowCount=%d", rowCount)
+	if rows != nil {rows.Close()}
+	if stmt != nil {stmt.Close()}
 	
 	stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
 					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id))
@@ -802,7 +912,7 @@ func DbGetReportsLastPage(aApiKey string, aPageSize int, aDb *sql.DB) (sliceRepo
 			fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
 					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id),
 			err.Error())
-		return sliceReports
+		return sliceReports, rowCount
 	}
 	
 	rows, err = stmt.Query((rowCount - int64(aPageSize)), aPageSize)
@@ -811,7 +921,7 @@ func DbGetReportsLastPage(aApiKey string, aPageSize int, aDb *sql.DB) (sliceRepo
 			fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
 					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id),
 			err.Error())
-		return sliceReports
+		return sliceReports, rowCount
 	}
 	
 	for rows.Next() {
@@ -829,6 +939,7 @@ func DbGetReportsLastPage(aApiKey string, aPageSize int, aDb *sql.DB) (sliceRepo
 		report.Id = id
 		report.ClientId = clientId
 		report.Time = time
+		report.Sequence = sequence
 		report.Message = message
 		report.FilePath = filePath
 		sliceReports = append(sliceReports, report)
@@ -836,5 +947,5 @@ func DbGetReportsLastPage(aApiKey string, aPageSize int, aDb *sql.DB) (sliceRepo
 	if rows != nil {rows.Close()}
 	if stmt != nil {stmt.Close()}
 	
-	return sliceReports
+	return sliceReports, rowCount
 }

@@ -20,6 +20,7 @@
 <div class="leftContentOz">
 <div class="groupsOz">
 	<a href="/apikeys" class="buttonBlueOz">API Keys</a>
+	<a href="#" class="buttonBlueOz">Export reports</a>
 	<a href="/logout" class="buttonBlueOz">Log out</a>
 </div>
 </div><!--.leftContentOz-->
@@ -36,11 +37,6 @@
 		filePath={{.FilePath}}, 
 		<br>
 	{{end}}
-	
-	<br>
-	-sequence 0, 26.10.2016-14:20 Utils, getMessage, message=Hello there.<br>
-	-sequence 1, 26.10.2016-14:21 Utils, getMessage, message=Hi.<br>
-	-sequence 2, 26.10.2016-14:22 Utils, getMessage, message=Ready.<br>
 	</div>
 	
 	<form action="/reports" method="POST">
