@@ -550,7 +550,7 @@ func DbAddApiKey(aUserId int, aAppName string, aDb *sql.DB) bool {
 	return true
 }
 
-func DbAddClientInfo(aApiKey string, aClientId string, aName string, aManufacturer string, aModel string, aDeviceId string, aDb *sql.DB) {
+func DbAddClientInfo(aApiKey string, aClientId string, aName string, aManufacturer string, aModel string, aDeviceId string, aDb *sql.DB) error {
 	var err error = nil
 	var db *sql.DB = aDb
 	var stmt *sql.Stmt = nil
@@ -559,7 +559,7 @@ func DbAddClientInfo(aApiKey string, aClientId string, aName string, aManufactur
 		db, err = sql.Open(DB_TYPE, DB_NAME)
 		if err != nil {
 			log.Printf("Error opening database=%s, error=%s", DB_NAME, err.Error())
-			return
+			return err
 		}
 		defer db.Close()
 	}	
@@ -567,22 +567,27 @@ func DbAddClientInfo(aApiKey string, aClientId string, aName string, aManufactur
 	stmt, err = db.Prepare(fmt.Sprintf(STMT_CREATE_TABLE_CLIENTINFO, aApiKey))
 	if err != nil {
 		log.Printf("Error creating, %s, error=%s", fmt.Sprintf(STMT_CREATE_TABLE_CLIENTINFO, aApiKey), err.Error())
+		return err
 	}
 	_, err = stmt.Exec()
 	if err != nil {
 		log.Printf("Error executing, %s, error=%s", fmt.Sprintf(STMT_CREATE_TABLE_CLIENTINFO, aApiKey), err.Error())
+		return err
 	}
 	if stmt != nil {stmt.Close()}
 	
 	stmt, err = db.Prepare(fmt.Sprintf(STMT_INSERT_INTO_CLIENTINFO, aApiKey))
 	if err != nil {
 		log.Printf("Error preparing, %s, error=%s", fmt.Sprintf(STMT_INSERT_INTO_CLIENTINFO, aApiKey), err.Error())
+		return err
 	}
 	_, err = stmt.Exec(aClientId, aName, aManufacturer, aModel, aDeviceId)
 	if err != nil {
 		log.Printf("Error executing, %s, error=%s", fmt.Sprintf(STMT_INSERT_INTO_CLIENTINFO, aApiKey), err.Error())
+		return err
 	}
 	if stmt != nil {stmt.Close()}
+	return nil
 }
 
 func DbDeleteClientInfo(aApiKey string, aClientId string, aDb *sql.DB) (isDeleted bool) {
@@ -652,6 +657,85 @@ func DbGetClientInfo(aApiKey string, aClientId string, aDb *sql.DB) *objects.Cli
 	if stmt != nil {stmt.Close()}
 	
 	return clientInfo
+}
+
+func DbGetClientInfos(aApiKey string, aDb *sql.DB) []*objects.ClientInfo {
+	var err error = nil
+	var db *sql.DB = aDb
+	var stmt *sql.Stmt = nil
+	var rows *sql.Rows = nil
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			log.Printf("Error opening database=%s, error=%s", DB_NAME, err.Error())
+			return nil
+		}
+		defer db.Close()
+	}
+	
+	stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s", TABLE_clientinfo, aApiKey))
+	if err != nil {
+		log.Printf("DbGetClientInfos, Error preparing %s, error=%s", fmt.Sprintf("select * from %s%s", TABLE_clientinfo, aApiKey), err.Error())
+		return nil
+	}
+	
+	rows, err = stmt.Query()
+	if err != nil {
+		log.Printf("DbGetClientInfos, Error quering, %s, error=%s", 
+			fmt.Sprintf("select * from %s%s", TABLE_clientinfo, aApiKey), err.Error())
+	}
+	var sliceClientInfo []*objects.ClientInfo = make([]*objects.ClientInfo, 0, 16)
+	for rows.Next() {
+		var clientId string
+		var name string
+		var manufacturer string
+		var model string
+		var deviceId string
+		var objClientInfo  *objects.ClientInfo
+		objClientInfo = new(objects.ClientInfo)
+		rows.Scan(&clientId, &name, &manufacturer, &model, &deviceId)
+		objClientInfo.ApiKey = aApiKey
+		objClientInfo.ClientId = clientId
+		objClientInfo.Name = name
+		objClientInfo.Manufacturer = manufacturer
+		objClientInfo.Model = model
+		objClientInfo.DeviceId = deviceId
+		sliceClientInfo = append(sliceClientInfo, objClientInfo)
+	}
+	if rows != nil {rows.Close()}
+	if stmt != nil {stmt.Close()}
+	
+	return sliceClientInfo
+}
+
+func DbUpdateClientInfo(aApiKey string, aClientId string, aName string, aDb *sql.DB) error {
+	var err error = nil
+	var db *sql.DB = aDb
+	var stmt *sql.Stmt = nil
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			log.Printf("DbUpdateClientInfo, Error opening db login.sqlite, err=%s", err.Error())
+			return err
+		}
+		defer db.Close()
+	}
+	
+	stmt, err = db.Prepare(fmt.Sprintf("update %s%s set %s=? where %s=?", TABLE_clientinfo, aApiKey, TABLE_CLIENTINFO_name, TABLE_CLIENTINFO_clientid))
+	if err != nil {
+		log.Printf("DbUpdateClientInfo, Error preparing, %s", 
+			fmt.Sprintf("update %s%s set %s=? where %s=?", TABLE_clientinfo, aApiKey, TABLE_CLIENTINFO_name, TABLE_CLIENTINFO_clientid), err.Error())
+		return err
+	}
+	
+	_, err = stmt.Exec(aName, aClientId)
+	if err != nil {
+		log.Printf("DbUpdateClientInfo, Error executing, %s", 
+			fmt.Sprintf("update %s%s set %s=? where %s=?", TABLE_clientinfo, aApiKey, TABLE_CLIENTINFO_name, TABLE_CLIENTINFO_clientid), err.Error())
+	}
+	return err
 }
 
 func DbAddReport(aApiKey string, aClientId string, aTime int, aSequence int, aMessage string, aFilePath string, aDb *sql.DB) {
@@ -742,7 +826,7 @@ func DbClearReports(aApiKey string, aDb *sql.DB) {
 	stmt.Close()
 }
 
-func DbGetReportsByApiKey(aApiKey string, aStartNum int, aPageSize int, aDb *sql.DB) (sliceReports []*objects.Report, endNum int) {
+func DbGetReportsByApiKey(aApiKey string, aClientId string, aStartNum int, aPageSize int, aDb *sql.DB) (sliceReports []*objects.Report, endNum int) {
 	endNum = aStartNum
 	sliceReports = make([]*objects.Report, 0, 64)
 	var err error = nil
@@ -759,8 +843,17 @@ func DbGetReportsByApiKey(aApiKey string, aStartNum int, aPageSize int, aDb *sql
 		defer db.Close()
 	}
 	
-	stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
+	if aClientId != STR_EMPTY {
+		stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s where %s=? order by %s, %s limit ?, ?",
+					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id))
+		log.Printf("DbGetReportsByApiKey, %s", fmt.Sprintf("select * from %s%s where %s=? order by %s, %s limit ?, ?",
+					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id))
+	} else {
+		stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
 					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id))
+		log.Printf("DbGetReportsByApiKey, %s", fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
+					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id))
+	}
 	if err != nil {
 		log.Printf("Error preparing, %s, error=%s", 
 			fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
@@ -769,7 +862,13 @@ func DbGetReportsByApiKey(aApiKey string, aStartNum int, aPageSize int, aDb *sql
 		return sliceReports, endNum
 	}
 	
-	rows, err = stmt.Query(aStartNum, aPageSize)
+	if aClientId != STR_EMPTY {
+		log.Printf("DbGetReportsByApiKey, Query, aClientId=%s", aClientId)
+		rows, err = stmt.Query(aClientId, aStartNum, aPageSize)
+	} else {
+		log.Printf("DbGetReportsByApiKey, Query, without clientId, aClientId=%s", aClientId)
+		rows, err = stmt.Query(aStartNum, aPageSize)
+	}
 	if err != nil {
 		log.Printf("Error quering, %s, error=%s", 
 			fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
@@ -866,7 +965,7 @@ func DbGetReports(aApiKey string, aId int, aPageSize int, aDb *sql.DB) (sliceRep
 	return sliceReports
 }
 
-func DbGetReportsLastPage(aApiKey string, aPageSize int, aDb *sql.DB) (sliceReports []*objects.Report, count int64) {
+func DbGetReportsLastPage(aApiKey string, aClientId string, aPageSize int, aDb *sql.DB) (sliceReports []*objects.Report, count int64) {
 	sliceReports = make([]*objects.Report, 0, 64)
 	var err error = nil
 	var db *sql.DB = aDb
@@ -883,14 +982,22 @@ func DbGetReportsLastPage(aApiKey string, aPageSize int, aDb *sql.DB) (sliceRepo
 		defer db.Close()
 	}
 	
-	stmt, err = db.Prepare(fmt.Sprintf("select Count(*) from %s%s",TABLE_reports, aApiKey))
+	if aClientId != STR_EMPTY {
+		stmt, err = db.Prepare(fmt.Sprintf("select Count(*) from %s%s where %s=?", TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid))
+	} else {
+		stmt, err = db.Prepare(fmt.Sprintf("select Count(*) from %s%s",TABLE_reports, aApiKey))
+	}
 	if err != nil {
 		log.Printf("Error preparing, %s, error=%s", 
 			fmt.Sprintf("select Count(*) from %s%s",TABLE_reports, aApiKey), err.Error())
 		return sliceReports, rowCount
 	}
 	
-	rows, err = stmt.Query()
+	if aClientId != STR_EMPTY {
+		rows, err = stmt.Query(aClientId)
+	} else {
+		rows, err = stmt.Query()
+	}
 	if err != nil {
 		log.Printf("Error quering, %s, error=%s", fmt.Sprintf("select Count(*) from %s%s", TABLE_reports, aApiKey), err.Error())
 		return sliceReports, rowCount
@@ -905,8 +1012,13 @@ func DbGetReportsLastPage(aApiKey string, aPageSize int, aDb *sql.DB) (sliceRepo
 	if rows != nil {rows.Close()}
 	if stmt != nil {stmt.Close()}
 	
-	stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
+	if aClientId != STR_EMPTY {
+		stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s where %s=? order by %s, %s limit ?, ?",
+					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id))
+	} else {
+		stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
 					TABLE_reports, aApiKey, TABLE_REPORTS_COLUMN_clientid, TABLE_REPORTS_COLUMN_id))
+	}
 	if err != nil {
 		log.Printf("Error preparing, %s, error=%s", 
 			fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",
@@ -915,7 +1027,11 @@ func DbGetReportsLastPage(aApiKey string, aPageSize int, aDb *sql.DB) (sliceRepo
 		return sliceReports, rowCount
 	}
 	
-	rows, err = stmt.Query((rowCount - int64(aPageSize)), aPageSize)
+	if aClientId != STR_EMPTY {
+		rows, err = stmt.Query(aClientId, (rowCount - int64(aPageSize)), aPageSize)
+	} else {
+		rows, err = stmt.Query((rowCount - int64(aPageSize)), aPageSize)
+	}
 	if err != nil {
 		log.Printf("Error quering, %s, error=%s", 
 			fmt.Sprintf("select * from %s%s order by %s, %s limit ?, ?",

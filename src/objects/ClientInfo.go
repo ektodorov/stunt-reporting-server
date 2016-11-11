@@ -5,9 +5,10 @@ import (
 )
 
 type ClientInfo struct {
-	ClientId string
-	Name string
-	Manufacturer string
-	Model string
-	DeviceId string
+	ApiKey string		`json:"apikey"`
+	ClientId string		`json:"clientid"`
+	Name string			`json:"name"`
+	Manufacturer string	`json:"manufacturer"`
+	Model string		`json:"model"`
+	DeviceId string		`json:"deviceid"`
 }

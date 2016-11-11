@@ -20,6 +20,7 @@
 <div class="leftContentOz">
 <div class="groupsOz">
 	<a href="/apikeys" class="buttonBlueOz">API Keys</a>
+	<a href="/clientids?apikey={{.ApiKey}}" class="buttonBlueOz">Client IDs</a>
 	<a href="#" class="buttonBlueOz">Export reports</a>
 	<a href="/logout" class="buttonBlueOz">Log out</a>
 </div>
@@ -27,7 +28,7 @@
 
 <div class="contentOz">
 
-	<div class="panelOz">
+	<div class="panelOz" style="padding:10px">
 	{{range .Reports}}
 		id={{.Id}}, 
 		clientId={{.ClientId}}, 
@@ -41,20 +42,21 @@
 	
 	<form action="/reports" method="POST">
 
-		<a href="/reports?apikey={{.ApiKey}}&pagenum=0">&lt;&lt; Beginning</a>
+		<a href="/reports?apikey={{.ApiKey}}&clientid={{.ClientId}}&pagenum=0">&lt;&lt; Beginning</a>
 		&nbsp;&nbsp;&nbsp;&nbsp;
 
-		<a href="/reports?apikey={{.ApiKey}}&pagenum={{.PageNumPrevious}}">&lt; Previous</a>
+		<a href="/reports?apikey={{.ApiKey}}&clientid={{.ClientId}}&pagenum={{.PageNumPrevious}}">&lt; Previous</a>
 		&nbsp;&nbsp;&nbsp;&nbsp;
 
-		<a href="/reports?apikey={{.ApiKey}}&pagenum={{.PageNumNext}}">Next &gt;</a>
+		<a href="/reports?apikey={{.ApiKey}}&clientid={{.ClientId}}&pagenum={{.PageNumNext}}">Next &gt;</a>
 		&nbsp;&nbsp;&nbsp;&nbsp;
 
-		<a href="/reports?apikey={{.ApiKey}}&pagenum={{.PageNumLast}}">End &gt;&gt;</a>
+		<a href="/reports?apikey={{.ApiKey}}&clientid={{.ClientId}}&pagenum={{.PageNumLast}}">End &gt;&gt;</a>
 		&nbsp;&nbsp;&nbsp;&nbsp;
 
 		<textarea rows="1" cols="10" name="pagenum">{{.PageNumStart}}</textarea>
 		<input type="hidden" name="apikey", value="{{.ApiKey}}">
+		<input type="hidden" name="clientid", value="{{.ClientId}}">
 		<input type="hidden" name="idlast", value="{{.ReportLast.Id}}">
 		<input type="submit" value="Go to page">
 	</form>

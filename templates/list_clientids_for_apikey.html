@@ -3,7 +3,7 @@
 <head>  
 
 <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
-<title>Confirm Deleting API Key</title>
+<title>Client IDs</title>
 
 <link href="../resources/styleoz.css" rel="stylesheet" type="text/css">
 
@@ -26,13 +26,27 @@
 
 <div class="contentOz">
 
+	{{range .ClientIds}}
 	<div class="panelOz" style="padding:10px">
-	Are you sure you want to delete:<br><br>
-	Application Name={{.AppName}}<br>
-	API Key={{.ApiKey}}<br>
-	<br><br>
-	<a href="/apikeydelete?apikey={{.ApiKey}}">Delete API Key</a>
+		ClientId={{.ClientId}}, 
+		Name={{.Name}}, 
+		Manufacturer={{.Manufacturer}}, 
+		Model={{.Model}}, 
+		DeviceId={{.DeviceId}}, 
+		<br><br>
+		
+		<form action="/updateclientinfo" method="POST">
+			<label for="name">Name:</label>
+			<input type="text" name="name" value="{{.Name}}">
+			<input type="hidden" name="apikey", value="{{.ApiKey}}">
+			<input type="hidden" name="clientid", value="{{.ClientId}}">
+			<input type="submit" value="Update Name">
+		</form>
+		
+		<a href="/reports?apikey={{.ApiKey}}&clientid={{.ClientId}}">Go to reports</a>
+		<br><br>
 	</div>
+	{{end}}
 
 </div>
 

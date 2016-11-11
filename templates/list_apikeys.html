@@ -26,14 +26,14 @@
 
 <div class="contentOz">
 
-	<div class="panelOz">
 	{{range .}}
+	<div class="panelOz" style="padding:10px">
 		Application Name={{.AppName}}<br>
 		key={{.ApiKey}}
 		<a style="margin-left:100px" href="/reports?apikey={{.ApiKey}}">Go to reports</a> <a style="margin-left:50px" href="/apikeydeleteconfirm?apikey={{.ApiKey}}&appname={{.AppName}}">Delete API Key</a>
 		<br><br>
-	{{end}}
 	</div>
+	{{end}}
 	
 	<div>
 	<a href="/apikeyadd">Add API Key</a>

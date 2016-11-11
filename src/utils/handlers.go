@@ -95,9 +95,8 @@ func HandlerMessage(aResponseWriter http.ResponseWriter, aRequest *http.Request)
 	bytesBody, err := ioutil.ReadAll(aRequest.Body)
 	if(err != nil) {
 		log.Printf("Error reading body, err=%s", err.Error())
-	} else {
-		log.Printf("bytesBody=%s", string(bytesBody))
 	}
+//	log.Printf("bytesBody=%s", string(bytesBody))
 	
 	//check Header Token
 //	headerAuthentication := aRequest.Header.Get(STR_Authorization)
@@ -385,6 +384,7 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 	}
 	
 	var strApiKey string
+	var strClientId string = STR_EMPTY
 	var startNum int
 	var pageNum int
 	var pageSize int
@@ -392,12 +392,16 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 	var strPageSize []string
 	var err error
 	apiKey := request.Form[API_KEY_apikey]
+	clientId := request.Form[API_KEY_clientid]
 	strPageNum = request.Form[API_KEY_pagenum]
 	strPageSize = request.Form[API_KEY_pagesize]
 	if apiKey != nil && len(apiKey) > 0 {
 		strApiKey = apiKey[0]
 	} else {
 		strApiKey = STR_EMPTY
+	}
+	if clientId != nil && len(clientId) > 0 {
+		strClientId = clientId[0]
 	}
 	if strPageNum != nil && len(strPageNum) > 0 {
 		regex, errRegEx := regexp.Compile("[^-][^0-9]")
@@ -425,15 +429,17 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 	}
 	var sliceReports []*objects.Report
 	
+	log.Printf("HandlerReports, clientId=%s", clientId)
+	log.Printf("HandlerReports, strClientId=%s", strClientId)
 	if(pageNum < 0) {
 		var rowCount int64
-		sliceReports, rowCount = DbGetReportsLastPage(strApiKey, pageSize, nil)
+		sliceReports, rowCount = DbGetReportsLastPage(strApiKey, strClientId, pageSize, nil)
 		pageNum = int(rowCount / int64(pageSize))
 		log.Printf("HandlerReports, startNum=%d, pageNum=%d, pageSize=%d", startNum, pageNum, pageSize)
 	} else {
 		startNum = pageNum * pageSize
 		var endNum int
-		sliceReports, endNum = DbGetReportsByApiKey(strApiKey, startNum, pageSize, nil)
+		sliceReports, endNum = DbGetReportsByApiKey(strApiKey, strClientId, startNum, pageSize, nil)
 		log.Printf("HandlerReports, startNum=%d, endNum=%d, pageNum=%d, pageSize=%d", startNum, endNum, pageNum, pageSize)
 	}
 	var pagePrevious int
@@ -461,6 +467,7 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 	var templateData = struct {
 							Reports []*objects.Report 
 							ApiKey string
+							ClientId string
 							PageNumStart int
 							PageNumPrevious int
 							PageNumNext int
@@ -469,6 +476,7 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 							}{
 								sliceReports, 
 								strApiKey,
+								strClientId,
 								pageNum,
 								pagePrevious,
 								pageNext,
@@ -564,4 +572,118 @@ func HandlerApiKeyDelete(responseWriter http.ResponseWriter, request *http.Reque
 	isDeleted := DbDeleteApiKey(apiKey, nil)
 	log.Printf("HandlerApiKeyDelete, isDeleted=%t", isDeleted)
 	http.Redirect(responseWriter, request, API_URL_list_apikeys, 301)
+}
+
+func HandlerClientInfoSend(responseWriter http.ResponseWriter, request *http.Request) {
+	request.ParseForm()
+	
+	body := request.Form
+	log.Printf("aRequest.Form=%s", body)
+	bytesBody, err := ioutil.ReadAll(request.Body)
+	if(err != nil) {
+		log.Printf("Error reading body, err=%s", err.Error())
+	}
+//	log.Printf("bytesBody=%s", string(bytesBody))
+	
+	clientInfo := new(objects.ClientInfo)
+	json.Unmarshal(bytesBody, clientInfo)
+	log.Printf("HandlerClientInfo, clientInfo.ApiKey=%s, clientInfo.ClientId=%s, clientInfo.Name=%s, clientInfo.Manufacturer=%s, clientInfo.Model=%s, clientInfo.DeviceId=%s", 
+			clientInfo.ApiKey, clientInfo.ClientId, clientInfo.Name, clientInfo.Manufacturer, clientInfo.Model, clientInfo.DeviceId)
+	isValid, _ := DbIsApiKeyValid(clientInfo.ApiKey, nil)
+	if !isValid {
+		result := new(objects.Result)
+		result.ErrorMessage = STR_MSG_invalidapikey
+		result.ResultCode = http.StatusOK
+		ServeResult(responseWriter, result, STR_template_result)
+		return
+	}
+	
+	errorAdd := DbAddClientInfo(clientInfo.ApiKey, clientInfo.ClientId, clientInfo.Name, clientInfo.Manufacturer, 
+							clientInfo.Model, clientInfo.DeviceId, nil)
+	if errorAdd != nil {
+		log.Printf("HandlerClientInfo, errorAdd=%s", errorAdd.Error())
+		ServeError(responseWriter, errorAdd.Error(), STR_template_page_error_html)
+	}
+}
+
+func HandlerClientInfoUpdate(responseWriter http.ResponseWriter, request *http.Request) {
+	request.ParseForm()
+	
+	body := request.Form
+	log.Printf("aRequest.Form=%s", body)
+	var strApiKey string
+	var strClientId string
+	var strName string
+	apiKeys := body[API_KEY_apikey]
+	clientIds := body[API_KEY_clientid]
+	names := body[API_KEY_name]
+	if apiKeys != nil && len(apiKeys) > 0 {
+		strApiKey = apiKeys[0]
+	} else {
+		ServeError(responseWriter, STR_MSG_invalidapikey, STR_template_page_error_html)
+		return
+	}
+	if clientIds != nil && len(clientIds) > 0 {
+		strClientId = clientIds[0]
+	} else {
+		ServeError(responseWriter, STR_MSG_invalidclientid, STR_template_page_error_html)
+		return
+	}
+	if names != nil && len(names) > 0 {
+		strName = names[0]
+	}
+	
+	isValid, _ := DbIsApiKeyValid(strApiKey, nil)
+	if !isValid {
+		result := new(objects.Result)
+		result.ErrorMessage = STR_MSG_invalidapikey
+		result.ResultCode = http.StatusOK
+		ServeResult(responseWriter, result, STR_template_result)
+		return
+	}
+	
+	errorUpdate := DbUpdateClientInfo(strApiKey, strClientId, strName, nil)
+	if errorUpdate != nil {
+		log.Printf("HandlerClientInfo, errorUpdate=%s", errorUpdate.Error())
+		ServeError(responseWriter, errorUpdate.Error(), STR_template_page_error_html)
+		return
+	}
+	
+	http.Redirect(responseWriter, request, (API_URL_list_clientids + "?apikey=" + strApiKey + "&clientid=" + strClientId), 301)
+}
+
+func HandlerClientIds(responseWriter http.ResponseWriter, request *http.Request) {
+	request.ParseForm()
+	
+	var apiKey string = STR_EMPTY
+	sliceApiKeys := request.Form[API_KEY_apikey]
+	log.Printf("HandlerClientIds, sliceApiKeys=%s", sliceApiKeys)
+	if sliceApiKeys != nil && len(sliceApiKeys) > 0 {
+		apiKey = sliceApiKeys[0]
+	} else {
+		ServeAddApiKey(responseWriter)
+		return
+	}
+	sliceClientInfos := DbGetClientInfos(apiKey, nil)
+	if sliceClientInfos == nil {
+		ServeError(responseWriter, STR_MSG_server_error, STR_template_page_error_html)
+		return
+	}
+	
+	templateClientIds, err := template.ParseFiles(STR_template_list_clientids_for_apikey_html)
+	if err != nil {
+		log.Printf("HandlerClientIds, Error parsing template, %s, error=%s", STR_template_list_clientids_for_apikey_html, err.Error())
+	}
+	var templateData = struct {
+							ClientIds []*objects.ClientInfo 
+							ApiKey string
+							}{
+								sliceClientInfos, 
+								apiKey,
+							}
+	errorExecute := templateClientIds.Execute(responseWriter, templateData)
+	if errorExecute != nil {
+		log.Printf("Error executing template, %s, error=%s", STR_template_list_clientids_for_apikey_html, errorExecute.Error())
+		ServeError(responseWriter, STR_MSG_server_error, STR_template_page_error_html)
+	}
 }
