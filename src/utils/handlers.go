@@ -17,6 +17,11 @@ import (
 )
 
 func HandlerRoot(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
+    aRequest.ParseForm()
+    if !(IsTokenValid(aResponseWriter, aRequest)) {
+    	return
+    }
+    
     //ServeError(aResponseWriter, STR_MSG_NOTFOUND, STR_template_page_error_html)
     
      //must test req.URL.Path == "/" and process only then, 
@@ -59,35 +64,35 @@ func HandlerRoot(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
 //	}
 }
 
-func HandlerEcho(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
-	responseText := STR_EMPTY 
-	
-	aRequest.ParseForm()
-	
-	body := aRequest.Form
-	log.Printf("aRequest.Form=%s", body)
-	
-	bytesBody, err := ioutil.ReadAll(aRequest.Body)
-	if(err != nil) {
-		log.Printf("Error reading body, err=%s", err.Error())
-	} else {
-		log.Printf("bytesBody=%s", string(bytesBody))
-		responseText = string(bytesBody)
-	}
-	
-	headers := aRequest.Header
-	for key, value := range headers {
-		log.Printf("header=%s\n", key)
-		fmt.Fprintf(aResponseWriter, "Header=%s\n", key)		
-		for idx, val := range value {
-			log.Printf("idx=%d, value=%s", idx, val)
-			fmt.Fprintf(aResponseWriter, "value=%s\n", val)
-		} 
-	}
-
-	fmt.Fprintf(aResponseWriter, "Method=%s\n", aRequest.Method)
-	fmt.Fprintf(aResponseWriter, "%s\n", responseText)
-}
+//func HandlerEcho(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
+//	responseText := STR_EMPTY 
+//	
+//	aRequest.ParseForm()
+//	
+//	body := aRequest.Form
+//	log.Printf("aRequest.Form=%s", body)
+//	
+//	bytesBody, err := ioutil.ReadAll(aRequest.Body)
+//	if(err != nil) {
+//		log.Printf("Error reading body, err=%s", err.Error())
+//	} else {
+//		log.Printf("bytesBody=%s", string(bytesBody))
+//		responseText = string(bytesBody)
+//	}
+//	
+//	headers := aRequest.Header
+//	for key, value := range headers {
+//		log.Printf("header=%s\n", key)
+//		fmt.Fprintf(aResponseWriter, "Header=%s\n", key)		
+//		for idx, val := range value {
+//			log.Printf("idx=%d, value=%s", idx, val)
+//			fmt.Fprintf(aResponseWriter, "value=%s\n", val)
+//		} 
+//	}
+//
+//	fmt.Fprintf(aResponseWriter, "Method=%s\n", aRequest.Method)
+//	fmt.Fprintf(aResponseWriter, "%s\n", responseText)
+//}
 
 func HandlerMessage(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
 	aRequest.ParseForm()
@@ -114,15 +119,20 @@ func HandlerMessage(aResponseWriter http.ResponseWriter, aRequest *http.Request)
 	
 	report := new(objects.Report)
 	json.Unmarshal(bytesBody, report)
-	log.Printf("report.ApiKey=%s, report.ClientId=%s, report.Message=%s, report.Sequence=%d, report.Time=%d", 
+	log.Printf("HandlerMessage, report.ApiKey=%s, report.ClientId=%s, report.Message=%s, report.Sequence=%d, report.Time=%d", 
 			report.ApiKey, report.ClientId, report.Message, report.Sequence, report.Time)
-	if report.ApiKey == STR_EMPTY {
+	var isApiKeyValid = false
+	if report.ApiKey != STR_EMPTY {
+		isApiKeyValid, _ = IsApiKeyValid(report.ApiKey)
+	}
+	if !isApiKeyValid {
 		result := new(objects.Result)
 		result.ErrorMessage = STR_MSG_invalidapikey
 		result.ResultCode = http.StatusOK
 		ServeResult(aResponseWriter, result, STR_template_result)
 		return
 	}
+	
 	DbAddReport(report.ApiKey, report.ClientId, report.Time, report.Sequence, report.Message, report.FilePath, nil) 
 	
 	result := new(objects.Result)
@@ -154,9 +164,13 @@ func HandlerUploadImage(aResponseWriter http.ResponseWriter, aRequest *http.Requ
 		log.Printf("strMessage=%s", strMessage)
 		report := new(objects.Report)
 		json.Unmarshal([]byte(strMessage), report)
-		log.Printf("report.ApiKey=%s, report.ClientId=%s, report.Message=%s, report.Sequence=%d, report.Time=%d", 
+		log.Printf("HandlerUploadImage, report.ApiKey=%s, report.ClientId=%s, report.Message=%s, report.Sequence=%d, report.Time=%d", 
 				report.ApiKey, report.ClientId, report.Message, report.Sequence, report.Time)
-		if report.ApiKey == STR_EMPTY {
+		var isApiKeyValid = false
+		if report.ApiKey != STR_EMPTY {
+			isApiKeyValid, _ = IsApiKeyValid(report.ApiKey)
+		}
+		if !isApiKeyValid {
 			result := new(objects.Result)
 			result.ErrorMessage = STR_MSG_invalidapikey
 			result.ResultCode = http.StatusOK
@@ -167,7 +181,7 @@ func HandlerUploadImage(aResponseWriter http.ResponseWriter, aRequest *http.Requ
 		//get file part
 		multipartFile, multipartFileHeader, err := aRequest.FormFile(API_KEY_image)
 		if err != nil {
-			log.Printf("Error getting file from FormFile, err=%s", err.Error())
+			log.Printf("HandlerUploadImage, Error getting file from FormFile, err=%s", err.Error())
 			result := new(objects.Result)
 			result.ErrorMessage = err.Error()
 			result.ResultCode = http.StatusBadRequest
@@ -187,7 +201,7 @@ func HandlerUploadImage(aResponseWriter http.ResponseWriter, aRequest *http.Requ
 			imageFilePath = fileName + strconv.Itoa(fileNum) + fileExstension
 			_, errorFileExists = os.Stat(imageFilePath)
 		}
-		log.Printf("imageFilePath=%s", imageFilePath)
+		log.Printf("HandlerUploadImage, imageFilePath=%s", imageFilePath)
 		
 		fileOut, errOut := os.Create(imageFilePath)
 		if errOut != nil {
@@ -198,10 +212,10 @@ func HandlerUploadImage(aResponseWriter http.ResponseWriter, aRequest *http.Requ
 	
 		written, errWrite := io.Copy(fileOut, multipartFile)
 		if errWrite != nil {
-			log.Printf("Erro copying file, errWrite=%s", errWrite.Error())
+			log.Printf("HandlerUploadImage, Erro copying file, errWrite=%s", errWrite.Error())
 			return
 		}
-		log.Printf("Bytes written=%d", written)
+		log.Printf("HandlerUploadImage, Bytes written=%d", written)
 		
 		//add report to Database
 		report.FilePath = imageFilePath
@@ -225,16 +239,20 @@ func HandlerUploadFile(aResponseWriter http.ResponseWriter, aRequest *http.Reque
 		//get message part
 		errorParse := aRequest.ParseMultipartForm(8388608)
 		if errorParse != nil {
-			log.Printf("errorParse=%s", errorParse.Error())
+			log.Printf("HandlerUploadFile, errorParse=%s", errorParse.Error())
 		}		
 		//Check ApiKey
 		strMessage := aRequest.FormValue(API_KEY_message)
 		log.Printf("strMessage=%s", strMessage)
 		report := new(objects.Report)
 		json.Unmarshal([]byte(strMessage), report)
-		log.Printf("report.ApiKey=%s, report.ClientId=%s, report.Message=%s, report.Sequence=%d, report.Time=%d", 
+		log.Printf("HandlerUploadFile, report.ApiKey=%s, report.ClientId=%s, report.Message=%s, report.Sequence=%d, report.Time=%d", 
 				report.ApiKey, report.ClientId, report.Message, report.Sequence, report.Time)
-		if report.ApiKey == STR_EMPTY {
+		var isApiKeyValid = false
+		if report.ApiKey != STR_EMPTY {
+			isApiKeyValid, _ = IsApiKeyValid(report.ApiKey)
+		}
+		if !isApiKeyValid {
 			result := new(objects.Result)
 			result.ErrorMessage = STR_MSG_invalidapikey
 			result.ResultCode = http.StatusOK
@@ -244,7 +262,7 @@ func HandlerUploadFile(aResponseWriter http.ResponseWriter, aRequest *http.Reque
 		
 		multipartFile, multipartFileHeader, err := aRequest.FormFile(API_KEY_file)
 		if err != nil {
-			log.Printf("Error getting file from FormFile, err=%s", err.Error())
+			log.Printf("HandlerUploadFile, Error getting file from FormFile, err=%s", err.Error())
 			result := new(objects.Result)
 			result.ErrorMessage = err.Error()
 			result.ResultCode = http.StatusBadRequest
@@ -264,18 +282,18 @@ func HandlerUploadFile(aResponseWriter http.ResponseWriter, aRequest *http.Reque
 			filePath = fileName + strconv.Itoa(fileNum) + fileExstension
 			_, errorFileExists = os.Stat(filePath)
 		}
-		log.Printf("filePath=%s", filePath)
+		log.Printf("HandlerUploadFile, filePath=%s", filePath)
 		
 		fileOut, errOut := os.Create(filePath)
 		if errOut != nil {
-			log.Printf("Error creating fileOut, errOut=%s", errOut.Error())
+			log.Printf("HandlerUploadFile, Error creating fileOut, errOut=%s", errOut.Error())
 			return
 		}
 		defer fileOut.Close()
 	
 		written, errWrite := io.Copy(fileOut, multipartFile)
 		if errWrite != nil {
-			log.Printf("Erro copying file, errWrite=%s", errWrite.Error())
+			log.Printf("HandlerUploadFile, Error copying file, errWrite=%s", errWrite.Error())
 			return
 		}
 		log.Printf("Bytes written=%d", written)
@@ -308,7 +326,7 @@ func HandlerLogin(responseWriter http.ResponseWriter, request *http.Request) {
 		var errorUser error = nil
 		userId, errorUser = DbGetUser(userName, password, nil)
 		if errorUser != nil {
-			log.Printf("handlerLogin, errorUser=%s", errorUser.Error())
+			log.Printf("HandlerLogin, errorUser=%s", errorUser.Error())
 		}
 		if (userId > -1) {
 			token := DbAddToken(userId, nil)
@@ -322,6 +340,8 @@ func HandlerLogin(responseWriter http.ResponseWriter, request *http.Request) {
 
 func HandlerLogout(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
+	
+	if !(IsTokenValid(responseWriter, request)) {return}
 	
 	AddCookie(responseWriter, "no token")
 	ServeLogin(responseWriter, STR_EMPTY);
@@ -357,7 +377,7 @@ func HandlerRegister(responseWriter http.ResponseWriter, request *http.Request) 
 func HandlerApiKeys(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 	
-	token := GetHeaderToken(request)
+	token := GetCookieToken(request)
 	isValid, userId := DbIsTokenValid(token, nil)
 	log.Printf("HandlerApiKeys, token=%s, isValid=%t, userId=%d", token, isValid, userId)
 	if !isValid {
@@ -384,7 +404,7 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 	
 	log.Printf("HandlerReports, url=%s", request.URL.RawPath)
 	
-	token := GetHeaderToken(request)
+	token := GetCookieToken(request)
 	isValid, userId := DbIsTokenValid(token, nil)
 	log.Printf("HandlerReports, token=%s, isValid=%t, userId=%d", token, isValid, userId)
 	if !isValid {
@@ -511,7 +531,7 @@ func HandlerAddApiKey(responseWriter http.ResponseWriter, request *http.Request)
 	request.ParseForm()
 	
 	log.Printf("HandlerAddApiKey, url=%s", request.URL.Path)
-	token := GetHeaderToken(request)
+	token := GetCookieToken(request)
 	isValid, userId := DbIsTokenValid(token, nil)
 	log.Printf("HandlerAddApiKey, token=%s, isValid=%t, userId=%d", token, isValid, userId)
 	if !isValid {
@@ -540,7 +560,7 @@ func HandlerApiKeyDeleteConfirm(responseWriter http.ResponseWriter, request *htt
 	request.ParseForm()
 	
 	log.Printf("HandlerApiKeyDelete, url=%s", request.URL.Path)
-	isTokenValid(responseWriter, request)
+	if !(IsTokenValid(responseWriter, request)) {return}
 	
 	var strApiKey string = STR_EMPTY
 	var strAppName string = STR_EMPTY
@@ -576,7 +596,7 @@ func HandlerApiKeyDelete(responseWriter http.ResponseWriter, request *http.Reque
 	request.ParseForm()
 	
 	log.Printf("HandlerApiKeyDelete, url=%s", request.URL.Path)
-	isTokenValid(responseWriter, request)
+	if !(IsTokenValid(responseWriter, request)) {return}
 	
 	var apiKey string = STR_EMPTY
 	sliceApiKeys := request.Form[API_KEY_apikey]
@@ -607,8 +627,11 @@ func HandlerClientInfoSend(responseWriter http.ResponseWriter, request *http.Req
 	json.Unmarshal(bytesBody, clientInfo)
 	log.Printf("HandlerClientInfo, clientInfo.ApiKey=%s, clientInfo.ClientId=%s, clientInfo.Name=%s, clientInfo.Manufacturer=%s, clientInfo.Model=%s, clientInfo.DeviceId=%s", 
 			clientInfo.ApiKey, clientInfo.ClientId, clientInfo.Name, clientInfo.Manufacturer, clientInfo.Model, clientInfo.DeviceId)
-	isValid, _ := DbIsApiKeyValid(clientInfo.ApiKey, nil)
-	if !isValid {
+	var isApiKeyValid = false
+	if clientInfo.ApiKey != STR_EMPTY {
+		isApiKeyValid, _ = IsApiKeyValid(clientInfo.ApiKey)
+	}
+	if !isApiKeyValid {
 		result := new(objects.Result)
 		result.ErrorMessage = STR_MSG_invalidapikey
 		result.ResultCode = http.StatusOK
@@ -650,9 +673,12 @@ func HandlerClientInfoUpdate(responseWriter http.ResponseWriter, request *http.R
 	if names != nil && len(names) > 0 {
 		strName = names[0]
 	}
-	
-	isValid, _ := DbIsApiKeyValid(strApiKey, nil)
-	if !isValid {
+
+	var isApiKeyValid = false
+	if strApiKey != STR_EMPTY {
+		isApiKeyValid, _ = IsApiKeyValid(strApiKey)
+	}
+	if !isApiKeyValid {
 		result := new(objects.Result)
 		result.ErrorMessage = STR_MSG_invalidapikey
 		result.ResultCode = http.StatusOK
@@ -679,7 +705,7 @@ func HandlerClientIds(responseWriter http.ResponseWriter, request *http.Request)
 	if sliceApiKeys != nil && len(sliceApiKeys) > 0 {
 		apiKey = sliceApiKeys[0]
 	} else {
-		ServeAddApiKey(responseWriter)
+		ServeLogin(responseWriter, STR_MSG_login)
 		return
 	}
 	sliceClientInfos := DbGetClientInfos(apiKey, nil)
@@ -711,7 +737,7 @@ func HandlerDownload(aResponseWriter http.ResponseWriter, aRequest *http.Request
 	log.Println("HandlerDownload")
 	aRequest.ParseForm()
 	
-	token := GetHeaderToken(aRequest)
+	token := GetCookieToken(aRequest)
 	isValid, userId := DbIsTokenValid(token, nil)
 	log.Printf("HandlerDownload, token=%s, isValid=%t, userId=%d", token, isValid, userId)
 	if !isValid {

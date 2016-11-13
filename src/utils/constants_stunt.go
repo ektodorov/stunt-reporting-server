@@ -53,7 +53,7 @@ const STR_filepath_upload_template = "resources/reportfiles/%s"
 const STR_filepath_download_template = "resources/exports/%s"
 
 const PATH_ROOT = "/"
-const PATH_ECHO = "/echo"
+//const PATH_ECHO = "/echo"
 const PATH_MESSAGE = "/message"
 const PATH_CLIENTINFO = "/sendclientinfo"
 const PATH_ClientInfoUpdate = "/updateclientinfo"
@@ -180,7 +180,7 @@ func AddCookie(responseWriter http.ResponseWriter, token string) {
 	http.SetCookie(responseWriter, cookie)
 }
 
-func GetHeaderToken(aRequest *http.Request) string {
+func GetCookieToken(aRequest *http.Request) string {
 //We don't want to use header, because we would have to write our AJAX application, that is why we use cookies
 //	headers := aRequest.Header
 //	tokens := headers["Token"]
@@ -199,17 +199,21 @@ func GetHeaderToken(aRequest *http.Request) string {
 	return token
 }
 
-func isTokenValid(responseWriter http.ResponseWriter, request *http.Request) {
-	token := GetHeaderToken(request)
+func IsTokenValid(responseWriter http.ResponseWriter, request *http.Request) bool {
+	token := GetCookieToken(request)
 	isValid, userId := DbIsTokenValid(token, nil)
 	log.Printf("HandlerAddApiKey, token=%s, isValid=%t, userId=%d", token, isValid, userId)
 	if !isValid {
 		ServeLogin(responseWriter, STR_MSG_login)
-		return;
+		return false
 	}
+	return true
 }
 
-func isApiKeyValid(aApiKey string) bool {
-	
-	return false
+func IsApiKeyValid(aApiKey string) (isValid bool, userId int) {
+	isValid, userId = DbIsApiKeyValid(aApiKey, nil)
+	if !isValid {
+		return false, -1
+	}
+	return isValid, userId
 }
