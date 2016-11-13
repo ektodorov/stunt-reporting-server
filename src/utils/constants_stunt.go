@@ -25,8 +25,12 @@ const STR_POST = "POST"
 const STR_error = "error"
 const STR_Authorization = "Authorization"
 const STR_symbol_dash = "-"
+const STR_symbol_dot = "."
 const STR_id = "id"
-const STR_MSG_404 = "404 Page not found"
+const STR_All_clients = "All clients"
+const STR_export = "export"
+const STR_txt = "txt"
+const STR_MSG_404 = "404, Page not found"
 const STR_MSG_login = "Please login"
 const STR_MSG_register = "Please enter email and password"
 const STR_MSG_invalidapikey = "Invalid api key"
@@ -43,8 +47,10 @@ const STR_template_list_reports_for_apikey_html = "templates/list_reports_for_ap
 const STR_template_add_apikey_html = "templates/add_apikey.html"
 const STR_template_apikey_deleteconfirm_html = "templates/apikey_deleteconfirm.html"
 const STR_template_list_clientids_for_apikey_html = "templates/list_clientids_for_apikey.html"
+const STR_template_export_html = "templates/export.html"
 
-const STR_img_filepathSave_template = "resources/reportfiles/%s"
+const STR_filepath_upload_template = "resources/reportfiles/%s"
+const STR_filepath_download_template = "resources/exports/%s"
 
 const PATH_ROOT = "/"
 const PATH_ECHO = "/echo"
@@ -55,6 +61,7 @@ const PATH_UPLOADIMAGE = "/uploadimage"
 const PATH_UPLOADFILE = "/uploadfile"
 const PATH_STATIC_TEMPLATES = "./templates"
 const PATH_Login = "/login"
+const PATH_logout = "/logout"
 const PATH_Register = "/register"
 const PATH_ApiKeys = "/apikeys"
 const PATH_Reports = "/reports"
@@ -62,6 +69,7 @@ const PATH_AddApiKey = "/apikeyadd"
 const PATH_ApiKeyDeleteConfirm = "/apikeydeleteconfirm"
 const PATH_ClientIds = "/clientids"
 const PATH_ApiKeyDelete = "/apikeydelete"
+const PATH_download = "/exports"
 const PORT_8080 = ":8080"
 
 const API_KEY_image = "image"
@@ -82,9 +90,13 @@ const API_KEY_appname = "appname"
 const API_KEY_clientid = "clientid"
 const API_KEY_name = "name"
 
-const API_URL_Content = "http://localhost:8080/templates/Content.html"
-const API_URL_list_apikeys = "http://localhost:8080/apikeys"
-const API_URL_list_clientids = "http://localhost:8080/clientids"
+const API_URL_domain = "localhost"
+const API_URL_port = ":8080"
+const API_URL_protocol = "http://"
+const API_URL = API_URL_protocol + API_URL_domain + API_URL_port
+const API_URL_Content = API_URL + "/templates/Content.html"
+const API_URL_list_apikeys = API_URL + "/apikeys"
+const API_URL_list_clientids = API_URL + "/clientids"
 
 const DB_TYPE = "sqlite3"
 const DB_NAME = "stunt.sqlite"
@@ -162,7 +174,7 @@ func AddCookie(responseWriter http.ResponseWriter, token string) {
 	cookie := new(http.Cookie)
 	cookie.Name = API_KEY_token
 	cookie.Value = token
-	cookie.Domain = "localhost"
+	cookie.Domain = API_URL_domain
 	cookie.MaxAge = TOKEN_VALIDITY_SECONDS
 	cookie.Path = "/"
 	http.SetCookie(responseWriter, cookie)

@@ -18,6 +18,7 @@ func main() {
     http.HandleFunc(utils.PATH_UPLOADIMAGE, utils.HandlerUploadImage)
     http.HandleFunc(utils.PATH_UPLOADFILE, utils.HandlerUploadFile)
     http.HandleFunc(utils.PATH_Login, utils.HandlerLogin)
+    http.HandleFunc(utils.PATH_logout, utils.HandlerLogout)
     http.HandleFunc(utils.PATH_Register, utils.HandlerRegister)
     http.HandleFunc(utils.PATH_ApiKeys, utils.HandlerApiKeys)
     http.HandleFunc(utils.PATH_Reports, utils.HandlerReports)
@@ -27,6 +28,7 @@ func main() {
     http.HandleFunc(utils.PATH_CLIENTINFO, utils.HandlerClientInfoSend)
     http.HandleFunc(utils.PATH_ClientInfoUpdate, utils.HandlerClientInfoUpdate)
     http.HandleFunc(utils.PATH_ClientIds, utils.HandlerClientIds)
+    http.HandleFunc(utils.PATH_download, utils.HandlerDownload)
     
     //http.Handle("/templates/", http.FileServer(http.Dir("./templates")))
     http.Handle("/resources/", http.StripPrefix("/resources/", http.FileServer(http.Dir("./resources"))))

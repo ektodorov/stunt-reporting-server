@@ -638,17 +638,19 @@ func DbGetClientInfo(aApiKey string, aClientId string, aDb *sql.DB) *objects.Cli
 		log.Printf("Error preparing, %s", fmt.Sprintf("select * from %s%s where %s=?", TABLE_clientinfo, aApiKey, TABLE_CLIENTINFO_clientid), err.Error())
 		return nil
 	}
-	row = stmt.QueryRow(aClientId) 
+	row = stmt.QueryRow(aClientId)
+	var clientId string
 	var name string
 	var manufacturer string
 	var model string
 	var deviceId string
-	err = row.Scan(&name, &manufacturer, &model, &deviceId)
+	err = row.Scan(&clientId, &name, &manufacturer, &model, &deviceId)
 	if err != nil {
 		log.Printf("Error executing, %s, error=%s", fmt.Sprintf("select * from %s%s where %s=?", TABLE_clientinfo, aApiKey, TABLE_CLIENTINFO_clientid), err.Error())
 		return nil
 	}
 	clientInfo := new(objects.ClientInfo)
+	clientInfo.ClientId = clientId
 	clientInfo.Name = name
 	clientInfo.Manufacturer = manufacturer
 	clientInfo.Model = model

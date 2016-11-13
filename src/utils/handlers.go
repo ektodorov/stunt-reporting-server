@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -11,6 +12,7 @@ import (
 	"objects"
 	"regexp"
 	"strconv"
+	"time"
 	"html/template"
 )
 
@@ -174,7 +176,7 @@ func HandlerUploadImage(aResponseWriter http.ResponseWriter, aRequest *http.Requ
 		}
 		defer multipartFile.Close()
 	
-		imageFilePath := fmt.Sprintf(STR_img_filepathSave_template, multipartFileHeader.Filename)
+		imageFilePath := fmt.Sprintf(STR_filepath_upload_template, multipartFileHeader.Filename)
 		fileName := imageFilePath[0:(len(imageFilePath) - 4)]
 		fileExstension := imageFilePath[(len(imageFilePath) - 4):len(imageFilePath)]
 		fileNum := 0;
@@ -251,7 +253,7 @@ func HandlerUploadFile(aResponseWriter http.ResponseWriter, aRequest *http.Reque
 		}
 		defer multipartFile.Close()
 	
-		filePath := fmt.Sprintf(STR_img_filepathSave_template, multipartFileHeader.Filename)
+		filePath := fmt.Sprintf(STR_filepath_upload_template, multipartFileHeader.Filename)
 		fileName := filePath[0:(len(filePath) - 4)]
 		fileExstension := filePath[(len(filePath) - 4):len(filePath)]
 		fileNum := 0;
@@ -316,6 +318,13 @@ func HandlerLogin(responseWriter http.ResponseWriter, request *http.Request) {
 			ServeLogin(responseWriter, "Wrong username or password");
 		}
 	}
+}
+
+func HandlerLogout(responseWriter http.ResponseWriter, request *http.Request) {
+	request.ParseForm()
+	
+	AddCookie(responseWriter, "no token")
+	ServeLogin(responseWriter, STR_EMPTY);
 }
 
 func HandlerRegister(responseWriter http.ResponseWriter, request *http.Request) {
@@ -442,6 +451,13 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 		sliceReports, endNum = DbGetReportsByApiKey(strApiKey, strClientId, startNum, pageSize, nil)
 		log.Printf("HandlerReports, startNum=%d, endNum=%d, pageNum=%d, pageSize=%d", startNum, endNum, pageNum, pageSize)
 	}
+	
+	var clientInfo = new(objects.ClientInfo)
+	clientInfo.Name = STR_All_clients
+	if strClientId != STR_EMPTY {
+		clientInfo = DbGetClientInfo(strApiKey, strClientId, nil)
+	}
+	
 	var pagePrevious int
 	var pageNext int
 	var reportLast *objects.Report
@@ -473,6 +489,7 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 							PageNumNext int
 							PageNumLast int
 							ReportLast *objects.Report
+							ClientInfo *objects.ClientInfo
 							}{
 								sliceReports, 
 								strApiKey,
@@ -482,6 +499,7 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 								pageNext,
 								-1,
 								reportLast,
+								clientInfo,
 							}
 	errorExecute := templateReport.Execute(responseWriter, templateData)
 	if errorExecute != nil {
@@ -666,8 +684,9 @@ func HandlerClientIds(responseWriter http.ResponseWriter, request *http.Request)
 	}
 	sliceClientInfos := DbGetClientInfos(apiKey, nil)
 	if sliceClientInfos == nil {
-		ServeError(responseWriter, STR_MSG_server_error, STR_template_page_error_html)
-		return
+		sliceClientInfos = make([]*objects.ClientInfo, 0, 16)
+//		ServeError(responseWriter, STR_MSG_server_error, STR_template_page_error_html)
+//		return
 	}
 	
 	templateClientIds, err := template.ParseFiles(STR_template_list_clientids_for_apikey_html)
@@ -686,4 +705,125 @@ func HandlerClientIds(responseWriter http.ResponseWriter, request *http.Request)
 		log.Printf("Error executing template, %s, error=%s", STR_template_list_clientids_for_apikey_html, errorExecute.Error())
 		ServeError(responseWriter, STR_MSG_server_error, STR_template_page_error_html)
 	}
+}
+
+func HandlerDownload(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
+	log.Println("HandlerDownload")
+	aRequest.ParseForm()
+	
+	token := GetHeaderToken(aRequest)
+	isValid, userId := DbIsTokenValid(token, nil)
+	log.Printf("HandlerDownload, token=%s, isValid=%t, userId=%d", token, isValid, userId)
+	if !isValid {
+		ServeLogin(aResponseWriter, STR_MSG_login)
+		return;
+	}
+	
+	var strApiKey string
+	var strClientId string = STR_EMPTY
+	var pageSize int
+	var strPageSize []string
+	var err error
+	apiKey := aRequest.Form[API_KEY_apikey]
+	clientId := aRequest.Form[API_KEY_clientid]
+	strPageSize = aRequest.Form[API_KEY_pagesize]
+	if apiKey != nil && len(apiKey) > 0 {
+		strApiKey = apiKey[0]
+	} else {
+		strApiKey = STR_EMPTY
+	}
+	if clientId != nil && len(clientId) > 0 {
+		strClientId = clientId[0]
+	}
+	if strPageSize != nil && len(strPageSize) > 0 {
+		pageSize, err = strconv.Atoi(strPageSize[0])
+		if err != nil {
+			log.Printf("HandlerDownload, Error converting %s to int, error=%s", strPageSize, err.Error())
+			pageSize = REPORTS_PAGE_SIZE
+		}	
+	} else {
+		pageSize = REPORTS_PAGE_SIZE
+	}
+	log.Printf("HandlerDownload, clientId=%s", clientId)
+	log.Printf("HandlerDownload, strClientId=%s", strClientId)
+	
+	var sliceReports []*objects.Report
+
+	var buffer = new(bytes.Buffer)
+	var hasMore = true
+	var startNum = 0
+	for ; hasMore; {
+		sliceReports, startNum = DbGetReportsByApiKey(strApiKey, strClientId, startNum, pageSize, nil)
+		log.Printf("HandlerDownload, startNum=%d, pageSize=%d", startNum, pageSize)	
+		
+		var written int
+		count := len(sliceReports)
+		for x := 0; x < count; x++ {
+			report := sliceReports[x]
+			written, err = buffer.WriteString("Id=")
+			log.Printf("HandlerDownload, written=%s", written)
+			if err != nil {
+				log.Printf("HandlerDownload, error writing, error=%s", err.Error())
+			}
+			written, err = buffer.WriteString(strconv.Itoa(report.Id))
+			if err != nil {
+				log.Printf("HandlerDownload, error writing report.Id=%s, error=%s", report.Id, err.Error())
+			}
+			written, err = buffer.WriteString(", ClientId=")
+			if err != nil {
+				log.Printf("HandlerDownload, error writing, error=%s", err.Error())
+			}
+			written, err = buffer.WriteString(report.ClientId)
+			if err != nil {
+				log.Printf("HandlerDownload, error writing report.ClientId=%s, error=%s", report.ClientId, err.Error())
+			}
+			written, err = buffer.WriteString(", Time=")
+			if err != nil {
+				log.Printf("HandlerDownload, error writing, error=%s", err.Error())
+			}
+			written, err = buffer.WriteString(strconv.Itoa(report.Time))
+			if err != nil {
+				log.Printf("HandlerDownload, error writing report.Time=%d, error=%s", report.Time, err.Error())
+			}
+			written, err = buffer.WriteString(", Sequence=")
+			if err != nil {
+				log.Printf("HandlerDownload, error writing, error=%s", err.Error())
+			}
+			written, err = buffer.WriteString(strconv.Itoa(report.Sequence))
+			if err != nil {
+				log.Printf("HandlerDownload, error writing report.Sequence=%d, error=%s", report.Sequence, err.Error())
+			}
+			written, err = buffer.WriteString(", Message=")
+			if err != nil {
+				log.Printf("HandlerDownload, error writing, error=%s", err.Error())
+			}
+			written, err = buffer.WriteString(report.Message)
+			if err != nil {
+				log.Printf("HandlerDownload, error writing report.Message=%s, error=%s", report.Message, err.Error())
+			}
+			written, err = buffer.WriteString(", FilePath=")
+			if err != nil {
+				log.Printf("HandlerDownload, error writing, error=%s", err.Error())
+			}
+			written, err = buffer.WriteString(report.FilePath)
+			if err != nil {
+				log.Printf("HandlerDownload, error writing report.FilePath=%s, error=%s", report.FilePath, err.Error())
+			}
+			written, err = buffer.WriteString("\n")
+			if err != nil {
+				log.Printf("HandlerDownload, error writing, error=%s", err.Error())
+			}
+		}
+		
+		if count == 0 || count < pageSize {
+			hasMore = false
+		}
+	}
+	data := buffer.Bytes()
+	
+    aResponseWriter.Header().Set("Content-Type", "application/octet-stream")
+    aResponseWriter.Header().Set("Content-Disposition", "attachment; filename=" + STR_export + ".txt")
+    aResponseWriter.Header().Set("Content-Transfer-Encoding", "binary")
+    aResponseWriter.Header().Set("Expires", "0")
+    http.ServeContent(aResponseWriter, aRequest, STR_EMPTY, time.Now(), bytes.NewReader(data))
 }

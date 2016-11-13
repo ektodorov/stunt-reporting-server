@@ -21,8 +21,14 @@
 <div class="groupsOz">
 	<a href="/apikeys" class="buttonBlueOz">API Keys</a>
 	<a href="/clientids?apikey={{.ApiKey}}" class="buttonBlueOz">Client IDs</a>
-	<a href="#" class="buttonBlueOz">Export reports</a>
+	<a href="/exports?apikey={{.ApiKey}}&clientid={{.ClientId}}" class="buttonBlueOz">Export reports</a>
+	
 	<a href="/logout" class="buttonBlueOz">Log out</a>
+</div>
+
+<div class="subMenuOz">
+	<span class="buttonWhiteOz" style="font-size:10px">{{.ApiKey}}</span>
+	<span class="buttonWhiteOz">{{.ClientInfo.Name}}</span>
 </div>
 </div><!--.leftContentOz-->
 
