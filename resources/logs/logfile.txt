@@ -1,0 +1,8 @@
+handlers.go:405: HandlerReports, url=
+handlers.go:409: HandlerReports, token=2f299211-7eea-45a1-5835-81a96f9b9951, isValid=true, userId=1
+handlers.go:441: HandlerReports, strPageNum[0]=0, strPage=0
+handlers.go:461: HandlerReports, clientId=[]
+handlers.go:462: HandlerReports, strClientId=
+database_stunt.go:857: DbGetReportsByApiKey, select * from reportsebc04eb22113443d4a20471bdd617c99 order by clientid, id limit ?, ?
+database_stunt.go:871: DbGetReportsByApiKey, Query, without clientId, aClientId=
+handlers.go:472: HandlerReports, startNum=0, endNum=2, pageNum=0, pageSize=2

@@ -7,10 +7,12 @@ import (
 	"log"
 	"net/http"
 	"math/rand"
+	"os"
 	"strings"
 	"time"
 )
 
+var FileLog *os.File
 var Letters = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 const SALT_LENGTH = 32
 const TOKEN_VALIDITY_SECONDS = 60 * 60 * 24
@@ -51,6 +53,7 @@ const STR_template_export_html = "templates/export.html"
 
 const STR_filepath_upload_template = "resources/reportfiles/%s"
 const STR_filepath_download_template = "resources/exports/%s"
+const STR_filepath_filelog = "resources/logs/logfile.txt"
 
 const PATH_ROOT = "/"
 //const PATH_ECHO = "/echo"
@@ -70,6 +73,7 @@ const PATH_ApiKeyDeleteConfirm = "/apikeydeleteconfirm"
 const PATH_ClientIds = "/clientids"
 const PATH_ApiKeyDelete = "/apikeydelete"
 const PATH_download = "/exports"
+const PATH_filelog_delete = "/filelogdelete"
 const PORT_8080 = ":8080"
 
 const API_KEY_image = "image"
@@ -216,4 +220,26 @@ func IsApiKeyValid(aApiKey string) (isValid bool, userId int) {
 		return false, -1
 	}
 	return isValid, userId
+}
+
+func FileLogCreate() {
+	var err error
+	FileLog, err = os.OpenFile("resources/logs/logfile.txt", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
+	if err != nil {
+		log.Printf("main_stunt, init, error Open logfile, error=%s", err.Error())
+		return
+	} else {
+		log.SetOutput(FileLog)
+		
+//		import "os/signal"
+//		c := make(chan os.Signal, 1)
+//		signal.Notify(c, os.Interrupt)
+//		go func(){
+//    		for sig := range c {
+//        		// sig is a ^C, handle it
+//        		log.Printf("main_stunt, handle os.Interrupt, sig=%d", sig)
+//        		utils.FileLog.Close()
+//    		}
+//		}()
+	}
 }

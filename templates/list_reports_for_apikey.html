@@ -27,7 +27,7 @@
 </div>
 
 <div class="subMenuOz">
-	<span class="buttonWhiteOz" style="font-size:10px">{{.ApiKey}}</span>
+	<span class="buttonWhiteOz" style="font-size:10px">API Key<br>{{.ApiKey}}</span>
 	<span class="buttonWhiteOz">{{.ClientInfo.Name}}</span>
 </div>
 </div><!--.leftContentOz-->
@@ -36,9 +36,9 @@
 
 	<div class="panelOz" style="padding:10px">
 	{{range .Reports}}
-		id={{.Id}}, 
-		clientId={{.ClientId}}, 
-		time={{.Time}}, 
+		<!-- id={{.Id}}, --> 
+		<!-- clientId={{.ClientId}}, --> 
+		time={{.TimeString}}, 
 		sequence={{.Sequence}}, 
 		message={{.Message}}, 
 		filePath=<a href="{{.FilePath}}">{{.FilePath}}</a>,

@@ -734,7 +734,6 @@ func HandlerClientIds(responseWriter http.ResponseWriter, request *http.Request)
 }
 
 func HandlerDownload(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
-	log.Println("HandlerDownload")
 	aRequest.ParseForm()
 	
 	token := GetCookieToken(aRequest)
@@ -807,7 +806,7 @@ func HandlerDownload(aResponseWriter http.ResponseWriter, aRequest *http.Request
 			if err != nil {
 				log.Printf("HandlerDownload, error writing, error=%s", err.Error())
 			}
-			written, err = buffer.WriteString(strconv.Itoa(report.Time))
+			written, err = buffer.WriteString(strconv.FormatInt(report.Time, 10))
 			if err != nil {
 				log.Printf("HandlerDownload, error writing report.Time=%d, error=%s", report.Time, err.Error())
 			}
@@ -852,4 +851,24 @@ func HandlerDownload(aResponseWriter http.ResponseWriter, aRequest *http.Request
     aResponseWriter.Header().Set("Content-Transfer-Encoding", "binary")
     aResponseWriter.Header().Set("Expires", "0")
     http.ServeContent(aResponseWriter, aRequest, STR_EMPTY, time.Now(), bytes.NewReader(data))
+}
+
+func HandlerFileLogDelete(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
+	aRequest.ParseForm()
+	
+	token := GetCookieToken(aRequest)
+	isValid, userId := DbIsTokenValid(token, nil)
+	log.Printf("HandlerDownload, token=%s, isValid=%t, userId=%d", token, isValid, userId)
+	if !isValid {
+		ServeLogin(aResponseWriter, STR_MSG_login)
+		return;
+	}
+	
+	var err error
+	err = os.Remove("resources/logs/logfile.txt")
+	if err != nil {
+		log.Printf("main_stunt, init, error Removing file, error=%s", err.Error())
+	} else {
+		FileLogCreate()
+	}
 }

@@ -9,6 +9,7 @@ import (
 func init() {
 	log.SetFlags(log.Lshortfile)
 	utils.DbInit()
+	//utils.FileLogCreate()
 }
 
 func main() {
@@ -29,10 +30,15 @@ func main() {
     http.HandleFunc(utils.PATH_ClientInfoUpdate, utils.HandlerClientInfoUpdate)
     http.HandleFunc(utils.PATH_ClientIds, utils.HandlerClientIds)
     http.HandleFunc(utils.PATH_download, utils.HandlerDownload)
+    http.HandleFunc(utils.PATH_filelog_delete, utils.HandlerFileLogDelete)
     
     //http.Handle("/templates/", http.FileServer(http.Dir("./templates")))
     http.Handle("/resources/", http.StripPrefix("/resources/", http.FileServer(http.Dir("./resources"))))
     
     http.ListenAndServe(":8080", nil)
+    
+    defer func(){
+    	utils.FileLog.Close()
+	}()
 }
 

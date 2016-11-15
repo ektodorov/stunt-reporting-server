@@ -740,7 +740,7 @@ func DbUpdateClientInfo(aApiKey string, aClientId string, aName string, aDb *sql
 	return err
 }
 
-func DbAddReport(aApiKey string, aClientId string, aTime int, aSequence int, aMessage string, aFilePath string, aDb *sql.DB) {
+func DbAddReport(aApiKey string, aClientId string, aTime int64, aSequence int, aMessage string, aFilePath string, aDb *sql.DB) {
 	var err error = nil
 	var db *sql.DB = aDb
 	var stmt *sql.Stmt = nil
@@ -882,21 +882,22 @@ func DbGetReportsByApiKey(aApiKey string, aClientId string, aStartNum int, aPage
 	for rows.Next() {
 		var id int
 		var clientId string
-		var time int
+		var reportTime int64
 		var sequence int
 		var message string
 		var filePath string
-		err = rows.Scan(&id, &clientId, &time, &sequence, &message, &filePath)
+		err = rows.Scan(&id, &clientId, &reportTime, &sequence, &message, &filePath)
 		if err != nil {
 			log.Printf("Error scanning, error=%s", err.Error())
 		}
 		var report = new(objects.Report)
 		report.Id = id
 		report.ClientId = clientId
-		report.Time = time
+		report.Time = reportTime
 		report.Sequence = sequence
 		report.Message = message
 		report.FilePath = filePath
+		report.TimeString = fmt.Sprintf("%s", time.Unix(reportTime, 0))
 		sliceReports = append(sliceReports, report)
 		endNum++
 	}
@@ -944,7 +945,7 @@ func DbGetReports(aApiKey string, aId int, aPageSize int, aDb *sql.DB) (sliceRep
 	for rows.Next() {
 		var id int
 		var clientId string
-		var time int
+		var time int64
 		var sequence int
 		var message string
 		var filePath string
@@ -1045,21 +1046,22 @@ func DbGetReportsLastPage(aApiKey string, aClientId string, aPageSize int, aDb *
 	for rows.Next() {
 		var id int
 		var clientId string
-		var time int
+		var reportTime int64
 		var sequence int
 		var message string
 		var filePath string
-		err = rows.Scan(&id, &clientId, &time, &sequence, &message, &filePath)
+		err = rows.Scan(&id, &clientId, &reportTime, &sequence, &message, &filePath)
 		if err != nil {
 			log.Printf("Error scanning, error=%s", err.Error())
 		}
 		var report = new(objects.Report)
 		report.Id = id
 		report.ClientId = clientId
-		report.Time = time
+		report.Time = reportTime
 		report.Sequence = sequence
 		report.Message = message
 		report.FilePath = filePath
+		report.TimeString = fmt.Sprintf("%s", time.Unix(reportTime, 0))
 		sliceReports = append(sliceReports, report)
 	}
 	if rows != nil {rows.Close()}
