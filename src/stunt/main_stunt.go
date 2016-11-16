@@ -17,7 +17,7 @@ func main() {
 
 	utils.Port = os.Getenv(utils.STR_PORT)
 	if utils.Port == utils.STR_EMPTY {
-        utils.Port == PORT_8080
+        utils.Port = utils.PORT_8080
     }
 
     http.HandleFunc(utils.PATH_ROOT, utils.HandlerRoot)
