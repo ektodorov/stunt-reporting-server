@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+var Port string
 var FileLog *os.File
 var Letters = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 const SALT_LENGTH = 32
@@ -38,6 +39,7 @@ const STR_MSG_register = "Please enter email and password"
 const STR_MSG_invalidapikey = "Invalid api key"
 const STR_MSG_invalidclientid = "Invalid client id"
 const STR_MSG_server_error = "500 Server error"
+const STR_PORT = "PORT"
 
 const STR_templates_login_html = "templates/login.html"
 const STR_templates_register_html = "templates/register.html"

@@ -3,6 +3,7 @@ package main
 import (
 	"log"
     "net/http"
+	"os"
     "utils"
 )
 
@@ -13,6 +14,12 @@ func init() {
 }
 
 func main() {
+
+	utils.Port = os.Getenv(utils.STR_PORT)
+	if utils.Port == utils.STR_EMPTY {
+        utils.Port == PORT_8080
+    }
+
     http.HandleFunc(utils.PATH_ROOT, utils.HandlerRoot)
 //    http.HandleFunc(utils.PATH_ECHO, utils.HandlerEcho)
     http.HandleFunc(utils.PATH_MESSAGE, utils.HandlerMessage)
@@ -35,7 +42,7 @@ func main() {
     //http.Handle("/templates/", http.FileServer(http.Dir("./templates")))
     http.Handle("/resources/", http.StripPrefix("/resources/", http.FileServer(http.Dir("./resources"))))
     
-    http.ListenAndServe(":8080", nil)
+    http.ListenAndServe(":" + utils.Port, nil)
     
     defer func(){
     	utils.FileLog.Close()

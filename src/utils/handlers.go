@@ -477,7 +477,7 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 	if strClientId != STR_EMPTY {
 		clientInfo = DbGetClientInfo(strApiKey, strClientId, nil)
 	}
-	
+
 	var pagePrevious int
 	var pageNext int
 	var reportLast *objects.Report
