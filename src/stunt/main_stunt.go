@@ -38,6 +38,8 @@ func main() {
     http.HandleFunc(utils.PATH_ClientIds, utils.HandlerClientIds)
     http.HandleFunc(utils.PATH_download, utils.HandlerDownload)
     http.HandleFunc(utils.PATH_filelog_delete, utils.HandlerFileLogDelete)
+    http.HandleFunc(utils.PATH_reports_delete_confirm, utils.HandlerReportsClearConfirm)
+    http.HandleFunc(utils.PATH_reports_delete, utils.HandlerReportsClear)
     
     //http.Handle("/templates/", http.FileServer(http.Dir("./templates")))
     http.Handle("/resources/", http.StripPrefix("/resources/", http.FileServer(http.Dir("./resources"))))

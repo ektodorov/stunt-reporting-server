@@ -18,7 +18,7 @@ var Letters = []rune("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV
 const SALT_LENGTH = 32
 const TOKEN_VALIDITY_SECONDS = 60 * 60 * 24
 const TOKEN_VALIDITY_MS = TOKEN_VALIDITY_SECONDS * 1000
-const REPORTS_PAGE_SIZE = 2
+const REPORTS_PAGE_SIZE = 100
 
 const STR_EMPTY = ""
 const STR_BLANK = " "
@@ -29,6 +29,7 @@ const STR_error = "error"
 const STR_Authorization = "Authorization"
 const STR_symbol_dash = "-"
 const STR_symbol_dot = "."
+const STR_symbol_colon = ":"
 const STR_id = "id"
 const STR_All_clients = "All clients"
 const STR_export = "export"
@@ -50,6 +51,7 @@ const STR_template_list_apikeys_html = "templates/list_apikeys.html"
 const STR_template_list_reports_for_apikey_html = "templates/list_reports_for_apikey.html"
 const STR_template_add_apikey_html = "templates/add_apikey.html"
 const STR_template_apikey_deleteconfirm_html = "templates/apikey_deleteconfirm.html"
+const STR_template_reports_deleteconfirm_html = "templates/reports_deleteconfirm.html"
 const STR_template_list_clientids_for_apikey_html = "templates/list_clientids_for_apikey.html"
 const STR_template_export_html = "templates/export.html"
 
@@ -76,7 +78,9 @@ const PATH_ClientIds = "/clientids"
 const PATH_ApiKeyDelete = "/apikeydelete"
 const PATH_download = "/exports"
 const PATH_filelog_delete = "/filelogdelete"
-const PORT_8080 = ":8080"
+const PATH_reports_delete_confirm = "/reportsdeleteconfirm"
+const PATH_reports_delete = "/reportsdelete"
+const PORT_8080 = "8080"
 
 const API_KEY_image = "image"
 const API_KEY_file = "file"
@@ -97,12 +101,12 @@ const API_KEY_clientid = "clientid"
 const API_KEY_name = "name"
 
 const API_URL_domain = "localhost"
-const API_URL_port = ":8080"
+//const API_URL_port = "8080"
 const API_URL_protocol = "http://"
-const API_URL = API_URL_protocol + API_URL_domain + API_URL_port
-const API_URL_Content = API_URL + "/templates/Content.html"
-const API_URL_list_apikeys = API_URL + "/apikeys"
-const API_URL_list_clientids = API_URL + "/clientids"
+const API_URL = API_URL_protocol + API_URL_domain
+//const API_URL_Content = API_URL + "/templates/Content.html"
+//const API_URL_list_apikeys = API_URL + "/apikeys"
+//const API_URL_list_clientids = API_URL + "/clientids"
 
 const DB_TYPE = "sqlite3"
 const DB_NAME = "stunt.sqlite"
@@ -244,4 +248,12 @@ func FileLogCreate() {
 //    		}
 //		}()
 	}
+}
+
+func GetApiUrlListApiKeys() string {
+	return API_URL + STR_symbol_colon + Port + "/apikeys"
+}
+
+func GetApiUrlListClientIds() string {
+	return API_URL + STR_symbol_colon + Port + "/clientids"
 }

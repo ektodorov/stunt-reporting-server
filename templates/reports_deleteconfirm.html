@@ -3,7 +3,7 @@
 <head>  
 
 <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
-<title>API Keys</title>
+<title>Confirm Deleting Reports</title>
 
 <link href="../resources/styleoz.css" rel="stylesheet" type="text/css">
 
@@ -26,17 +26,12 @@
 
 <div class="contentOz">
 
-	{{range .}}
 	<div class="panelOz" style="padding:10px">
-		Application Name={{.AppName}}<br>
-		key={{.ApiKey}}
-		<a style="margin-left:100px" href="/reports?apikey={{.ApiKey}}&appname={{.AppName}}">Go to reports</a> <a style="margin-left:50px" href="/apikeydeleteconfirm?apikey={{.ApiKey}}&appname={{.AppName}}">Delete API Key</a>
-		<br><br>
-	</div>
-	{{end}}
-	
-	<div>
-	<a href="/apikeyadd">Add API Key</a>
+	Are you sure you want to delete all reports for:<br><br>
+	Application Name={{.AppName}}<br>
+	API Key={{.ApiKey}}<br>
+	<br><br>
+	<a href="/reportsdelete?apikey={{.ApiKey}}">Delete Reports</a>
 	</div>
 
 </div>

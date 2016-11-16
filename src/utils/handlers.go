@@ -331,7 +331,7 @@ func HandlerLogin(responseWriter http.ResponseWriter, request *http.Request) {
 		if (userId > -1) {
 			token := DbAddToken(userId, nil)
 			AddCookie(responseWriter, token)
-			http.Redirect(responseWriter, request, API_URL_list_apikeys, 301)
+			http.Redirect(responseWriter, request, GetApiUrlListApiKeys(), 301)
 		} else {
 			ServeLogin(responseWriter, "Wrong username or password");
 		}
@@ -412,7 +412,8 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 		return;
 	}
 	
-	var strApiKey string
+	var strApiKey string = STR_EMPTY
+	var strAppName string = STR_EMPTY
 	var strClientId string = STR_EMPTY
 	var startNum int
 	var pageNum int
@@ -421,13 +422,15 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 	var strPageSize []string
 	var err error
 	apiKey := request.Form[API_KEY_apikey]
+	appName := request.Form[API_KEY_appname]
 	clientId := request.Form[API_KEY_clientid]
 	strPageNum = request.Form[API_KEY_pagenum]
 	strPageSize = request.Form[API_KEY_pagesize]
 	if apiKey != nil && len(apiKey) > 0 {
 		strApiKey = apiKey[0]
-	} else {
-		strApiKey = STR_EMPTY
+	}
+	if appName != nil && len(appName) > 0 {
+		strAppName = appName[0]
 	}
 	if clientId != nil && len(clientId) > 0 {
 		strClientId = clientId[0]
@@ -503,6 +506,7 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 	var templateData = struct {
 							Reports []*objects.Report 
 							ApiKey string
+							AppName string
 							ClientId string
 							PageNumStart int
 							PageNumPrevious int
@@ -513,6 +517,7 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 							}{
 								sliceReports, 
 								strApiKey,
+								strAppName,
 								strClientId,
 								pageNum,
 								pagePrevious,
@@ -525,6 +530,71 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 	if errorExecute != nil {
 		log.Printf("Error executing template, %s, error=%s", STR_template_list_reports_for_apikey_html, errorExecute.Error())
 	}
+}
+
+func HandlerReportsClearConfirm(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
+	aRequest.ParseForm()
+	
+	token := GetCookieToken(aRequest)
+	isValid, userId := DbIsTokenValid(token, nil)
+	log.Printf("HandlerReports, token=%s, isValid=%t, userId=%d", token, isValid, userId)
+	if !isValid {
+		ServeLogin(aResponseWriter, STR_MSG_login)
+		return;
+	}
+	
+	var strApiKey string = STR_EMPTY
+	var strAppName string = STR_EMPTY
+	sliceApiKeys := aRequest.Form[API_KEY_apikey]
+	sliceAppNames := aRequest.Form[API_KEY_appname]
+	log.Printf("HandlerReportsClearConfirm, sliceApiKeys=%s, sliceApiNames=%s", sliceApiKeys, sliceAppNames)
+	if sliceApiKeys != nil && len(sliceApiKeys) > 0 {
+		strApiKey = sliceApiKeys[0]
+	} else {
+		strApiKey = STR_EMPTY
+	}
+	if sliceAppNames != nil && len(sliceAppNames) > 0 {
+		strAppName = sliceAppNames[0]
+	}
+	if strApiKey == STR_EMPTY {return}
+	
+	var apiKey *objects.ApiKey = new(objects.ApiKey)
+	apiKey.ApiKey = strApiKey
+	apiKey.AppName = strAppName
+	
+	templateDeleteConfirm, err := template.ParseFiles(STR_template_reports_deleteconfirm_html)
+	if err != nil {
+		log.Printf("HandlerReportsClearConfirm, Error parsing template %s, error=%s", STR_template_reports_deleteconfirm_html, err.Error())
+	}
+	errorExecute := templateDeleteConfirm.Execute(aResponseWriter, apiKey)
+	if errorExecute != nil {
+		log.Printf("HandlerReportsClearConfirm, Error executing template, %s, error=%s", STR_template_reports_deleteconfirm_html, errorExecute.Error())
+	}
+}
+
+func HandlerReportsClear(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
+	aRequest.ParseForm()
+	
+	token := GetCookieToken(aRequest)
+	isValid, userId := DbIsTokenValid(token, nil)
+	log.Printf("HandlerReportsClear, token=%s, isValid=%t, userId=%d", token, isValid, userId)
+	if !isValid {
+		ServeLogin(aResponseWriter, STR_MSG_login)
+		return;
+	}
+	
+	var strApiKey string
+	apiKeys := aRequest.Form[API_KEY_apikey]
+	if apiKeys != nil && len(apiKeys) > 0 {
+		strApiKey = apiKeys[0]
+	} else {
+		strApiKey = STR_EMPTY
+	}
+	if strApiKey == STR_EMPTY {return}
+	
+	DbClearReports(strApiKey, nil)
+	DbClearClientInfo(strApiKey, nil)
+	http.Redirect(aResponseWriter, aRequest, GetApiUrlListApiKeys(), http.StatusMovedPermanently)
 }
 
 func HandlerAddApiKey(responseWriter http.ResponseWriter, request *http.Request) {
@@ -552,7 +622,7 @@ func HandlerAddApiKey(responseWriter http.ResponseWriter, request *http.Request)
 	isAdded := DbAddApiKey(userId, appName, nil)
 	log.Printf("HadlerAddApiKey, isAdded=%t", isAdded)
 	if isAdded {
-		http.Redirect(responseWriter, request, API_URL_list_apikeys, 301)
+		http.Redirect(responseWriter, request, GetApiUrlListApiKeys(), http.StatusMovedPermanently)
 	}
 }
 
@@ -584,11 +654,11 @@ func HandlerApiKeyDeleteConfirm(responseWriter http.ResponseWriter, request *htt
 	
 	templateDeleteConfirm, err := template.ParseFiles(STR_template_apikey_deleteconfirm_html)
 	if err != nil {
-		log.Printf("Error parsing template %s, error=%s", STR_template_apikey_deleteconfirm_html, err.Error())
+		log.Printf("HandlerApiKeyDeleteConfirm, Error parsing template %s, error=%s", STR_template_apikey_deleteconfirm_html, err.Error())
 	}
 	errorExecute := templateDeleteConfirm.Execute(responseWriter, apiKey)
 	if errorExecute != nil {
-		log.Printf("Error executing template, %s, error=%s", STR_template_list_apikeys_html, errorExecute.Error())
+		log.Printf("HandlerApiKeyDeleteConfirm, Error executing template, %s, error=%s", STR_template_apikey_deleteconfirm_html, errorExecute.Error())
 	}
 }
 
@@ -609,7 +679,7 @@ func HandlerApiKeyDelete(responseWriter http.ResponseWriter, request *http.Reque
 	}
 	isDeleted := DbDeleteApiKey(apiKey, nil)
 	log.Printf("HandlerApiKeyDelete, isDeleted=%t", isDeleted)
-	http.Redirect(responseWriter, request, API_URL_list_apikeys, 301)
+	http.Redirect(responseWriter, request, GetApiUrlListApiKeys(), 301)
 }
 
 func HandlerClientInfoSend(responseWriter http.ResponseWriter, request *http.Request) {
@@ -693,7 +763,7 @@ func HandlerClientInfoUpdate(responseWriter http.ResponseWriter, request *http.R
 		return
 	}
 	
-	http.Redirect(responseWriter, request, (API_URL_list_clientids + "?apikey=" + strApiKey + "&clientid=" + strClientId), 301)
+	http.Redirect(responseWriter, request, (GetApiUrlListClientIds() + "?apikey=" + strApiKey + "&clientid=" + strClientId), 301)
 }
 
 func HandlerClientIds(responseWriter http.ResponseWriter, request *http.Request) {

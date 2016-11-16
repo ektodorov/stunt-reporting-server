@@ -740,6 +740,33 @@ func DbUpdateClientInfo(aApiKey string, aClientId string, aName string, aDb *sql
 	return err
 }
 
+func DbClearClientInfo(aApiKey string, aDb *sql.DB) error {
+	var err error = nil
+	var db *sql.DB = aDb
+	var stmt *sql.Stmt = nil
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			log.Printf("Error opening database=%s, error=%s", DB_NAME, err.Error())
+			return nil
+		}
+		defer db.Close()
+	}
+	
+	stmt, err = db.Prepare(fmt.Sprintf("delete from %s%s", TABLE_clientinfo, aApiKey))
+	if err != nil {
+		log.Printf("DbClearClientInfo, Error preparing %s, error=%s", fmt.Sprintf("delete * from %s%s", TABLE_clientinfo, aApiKey), err.Error())
+		return err
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		log.Printf("DbClearClientInfo, Error executing %s, error=%s", fmt.Sprintf("delete * from %s%s", TABLE_clientinfo, aApiKey), err.Error())
+	}
+	if stmt != nil {stmt.Close()}
+	return err
+}
+
 func DbAddReport(aApiKey string, aClientId string, aTime int64, aSequence int, aMessage string, aFilePath string, aDb *sql.DB) {
 	var err error = nil
 	var db *sql.DB = aDb
@@ -802,7 +829,7 @@ func DbDeleteReport(aApiKey string, aId int, aDb *sql.DB) {
 }
 
 // Delete all records in the reports<apiKey> table
-func DbClearReports(aApiKey string, aDb *sql.DB) {
+func DbClearReports(aApiKey string, aDb *sql.DB) error {
 	// Instead of deleting all from reports<aApiKey> we can just - drop table if exists reports<aApiKey>
 	var err error = nil
 	var db *sql.DB = aDb
@@ -812,7 +839,7 @@ func DbClearReports(aApiKey string, aDb *sql.DB) {
 		db, err = sql.Open(DB_TYPE, DB_NAME)
 		if err != nil {
 			log.Printf("Error opening database=%s, error=%s", DB_NAME, err.Error())
-			return
+			return err
 		}
 		defer db.Close()
 	}
@@ -820,12 +847,14 @@ func DbClearReports(aApiKey string, aDb *sql.DB) {
 	stmt, err = db.Prepare(fmt.Sprintf("delete from %s%s", TABLE_reports, aApiKey))
 	if err != nil {
 		log.Printf("Error preparing %s, error=%s", fmt.Sprintf("delete * from %s%s", TABLE_reports, aApiKey), err.Error())
+		return err
 	}
 	_, err = stmt.Exec()
 	if err != nil {
 		log.Printf("Error executing %s, error=%s", fmt.Sprintf("delete * from %s%s", TABLE_reports, aApiKey), err.Error())
 	}
-	stmt.Close()
+	if stmt != nil {stmt.Close()}
+	return err
 }
 
 func DbGetReportsByApiKey(aApiKey string, aClientId string, aStartNum int, aPageSize int, aDb *sql.DB) (sliceReports []*objects.Report, endNum int) {
