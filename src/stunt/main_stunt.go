@@ -19,9 +19,9 @@ func main() {
 	if utils.Port == utils.STR_EMPTY {
         utils.Port = utils.PORT_8080
     }
+    log.Printf("main, Port=%s", utils.Port)
 
     http.HandleFunc(utils.PATH_ROOT, utils.HandlerRoot)
-//    http.HandleFunc(utils.PATH_ECHO, utils.HandlerEcho)
     http.HandleFunc(utils.PATH_MESSAGE, utils.HandlerMessage)
     http.HandleFunc(utils.PATH_UPLOADIMAGE, utils.HandlerUploadImage)
     http.HandleFunc(utils.PATH_UPLOADFILE, utils.HandlerUploadFile)
@@ -44,7 +44,7 @@ func main() {
     //http.Handle("/templates/", http.FileServer(http.Dir("./templates")))
     http.Handle("/resources/", http.StripPrefix("/resources/", http.FileServer(http.Dir("./resources"))))
     
-    http.ListenAndServe(":" + utils.Port, nil)
+    http.ListenAndServe((":" + utils.Port), nil)
     
     defer func(){
     	utils.FileLog.Close()

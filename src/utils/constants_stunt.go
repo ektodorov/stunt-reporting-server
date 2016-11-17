@@ -60,7 +60,6 @@ const STR_filepath_download_template = "resources/exports/%s"
 const STR_filepath_filelog = "resources/logs/logfile.txt"
 
 const PATH_ROOT = "/"
-//const PATH_ECHO = "/echo"
 const PATH_MESSAGE = "/message"
 const PATH_CLIENTINFO = "/sendclientinfo"
 const PATH_ClientInfoUpdate = "/updateclientinfo"
@@ -101,12 +100,7 @@ const API_KEY_clientid = "clientid"
 const API_KEY_name = "name"
 
 const API_URL_domain = "localhost"
-//const API_URL_port = "8080"
-const API_URL_protocol = "http://"
-const API_URL = API_URL_protocol + API_URL_domain
-//const API_URL_Content = API_URL + "/templates/Content.html"
-//const API_URL_list_apikeys = API_URL + "/apikeys"
-//const API_URL_list_clientids = API_URL + "/clientids"
+const API_URL = "http://localhost"
 
 const DB_TYPE = "sqlite3"
 const DB_NAME = "stunt.sqlite"
@@ -251,9 +245,17 @@ func FileLogCreate() {
 }
 
 func GetApiUrlListApiKeys() string {
-	return API_URL + STR_symbol_colon + Port + "/apikeys"
+	if Port == PORT_8080 {
+		return API_URL + STR_symbol_colon + Port + "/apikeys"
+	} else {
+		return API_URL + "/apikeys"
+	}
 }
 
 func GetApiUrlListClientIds() string {
-	return API_URL + STR_symbol_colon + Port + "/clientids"
+	if Port == PORT_8080 {
+		return API_URL + STR_symbol_colon + Port + "/clientids"
+	} else {
+		return API_URL + "/clientids"
+	}
 }

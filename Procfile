@@ -1,1 +1,1 @@
-web: stunt
+web: stunt-reporting-server
