@@ -99,8 +99,8 @@ const API_KEY_appname = "appname"
 const API_KEY_clientid = "clientid"
 const API_KEY_name = "name"
 
-const API_URL_domain = "localhost"
-const API_URL = "http://localhost"
+const API_URL_domain = "intense-wildwood-75243.herokuapp.com"
+const API_URL = "https://intense-wildwood-75243.herokuapp.com"
 
 const DB_TYPE = "sqlite3"
 const DB_NAME = "stunt.sqlite"
