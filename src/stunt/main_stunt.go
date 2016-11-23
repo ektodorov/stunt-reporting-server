@@ -10,7 +10,6 @@ import (
 func init() {
 	log.SetFlags(log.Lshortfile)
 	utils.DbInit()
-	//utils.FileLogCreate()
 }
 
 func main() {
@@ -45,9 +44,5 @@ func main() {
     http.Handle("/resources/", http.StripPrefix("/resources/", http.FileServer(http.Dir("./resources"))))
     
     http.ListenAndServe((":" + utils.Port), nil)
-    
-    defer func(){
-    	utils.FileLog.Close()
-	}()
 }
 

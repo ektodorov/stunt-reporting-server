@@ -41,7 +41,7 @@ func ServeLogin(responseWriter http.ResponseWriter, message string) {
 		log.Printf("ServeLogin, Error=%s", err.Error());
 	}
 	
-	msg := new(objects.MessageHolder);
+	msg := new(objects.Message);
 	msg.Message = message;
 	err = loginTemplate.Execute(responseWriter, msg);
 	if err != nil {
@@ -55,7 +55,7 @@ func ServeRegister(responseWriter http.ResponseWriter, message string) {
 		log.Printf("ServeRegister, Error=%s", err.Error())
 	}
 	
-	msg := new(objects.MessageHolder)
+	msg := new(objects.Message)
 	msg.Message = message
 	err = registerTemplate.Execute(responseWriter, msg)
 	if err != nil {
