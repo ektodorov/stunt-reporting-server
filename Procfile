@@ -1,1 +1,0 @@
-web: stunt-reporting-server
