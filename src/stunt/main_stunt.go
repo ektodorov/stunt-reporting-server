@@ -39,6 +39,7 @@ func main() {
     http.HandleFunc(utils.PATH_filelog_delete, utils.HandlerFileLogDelete)
     http.HandleFunc(utils.PATH_reports_delete_confirm, utils.HandlerReportsClearConfirm)
     http.HandleFunc(utils.PATH_reports_delete, utils.HandlerReportsClear)
+    http.HandleFunc(utils.PATH_invite, utils.HandlerInviteCreate)
     
     //http.Handle("/templates/", http.FileServer(http.Dir("./templates")))
     http.Handle("/resources/", http.StripPrefix("/resources/", http.FileServer(http.Dir("./resources"))))

@@ -382,7 +382,19 @@ func HandlerApiKeys(responseWriter http.ResponseWriter, request *http.Request) {
 	log.Printf("HandlerApiKeys, token=%s, isValid=%t, userId=%d", token, isValid, userId)
 	if !isValid {
 		ServeLogin(responseWriter, STR_MSG_login)
-		return;
+		return
+	}
+	
+	var strApiKey string = STR_EMPTY
+	sliceApiKeys := request.Form[API_KEY_apikey]
+	if sliceApiKeys != nil && len(sliceApiKeys) > 0 {
+		strApiKey = sliceApiKeys[0]
+	}
+	if strApiKey != STR_EMPTY {
+		sliceInviteIds := request.Form[API_KEY_inviteid]
+		if sliceInviteIds != nil && len(sliceInviteIds) > 0 {
+			DbInviteAddApiKey(userId, sliceInviteIds[0], strApiKey, nil)
+		}
 	}
 	
 	var apiKeys []*objects.ApiKey
@@ -940,5 +952,50 @@ func HandlerFileLogDelete(aResponseWriter http.ResponseWriter, aRequest *http.Re
 		log.Printf("main_stunt, init, error Removing file, error=%s", err.Error())
 	} else {
 		FileLogCreate()
+	}
+}
+
+func HandlerInviteCreate(responseWriter http.ResponseWriter, request *http.Request) {
+	request.ParseForm()
+	
+	token := GetCookieToken(request)
+	isValid, userId := DbIsTokenValid(token, nil)
+	log.Printf("HandlerInvite, token=%s, isValid=%t, userId=%d", token, isValid, userId)
+	if !isValid {
+		ServeLogin(responseWriter, STR_MSG_login)
+		return
+	}
+	
+	var strApiKey string = STR_EMPTY
+	var strAppName string = STR_EMPTY
+	sliceApiKeys := request.Form[API_KEY_apikey]
+	sliceAppNames := request.Form[API_KEY_appname]
+	if sliceApiKeys != nil && len(sliceApiKeys) > 0 {
+		strApiKey = sliceApiKeys[0]
+	}
+	if sliceAppNames != nil && len(sliceAppNames) > 0 {
+		strAppName = sliceAppNames[0]
+	}
+	
+	var inviteId = DbInviteAdd(strApiKey, nil)
+	
+	templateApiKeys, err := template.ParseFiles(STR_template_invite_html)
+	if err != nil {
+		log.Printf("Error parsing template %s, error=%s", STR_template_invite_html, err.Error())
+	}
+	var templateData = struct {
+							ApiUrlInvite string
+							InviteId string
+							ApiKey string
+							AppName string
+						}{
+							GetApiUrlInvite(),
+							inviteId,
+							strApiKey,
+							strAppName,
+						}
+	errorExecute := templateApiKeys.Execute(responseWriter, templateData)
+	if errorExecute != nil {
+		log.Printf("Error executing template, %s, error=%s", STR_template_invite_html, errorExecute.Error())
 	}
 }

@@ -19,6 +19,7 @@ const SALT_LENGTH = 32
 const TOKEN_VALIDITY_SECONDS = 60 * 60 * 24
 const TOKEN_VALIDITY_MS = TOKEN_VALIDITY_SECONDS * 1000
 const REPORTS_PAGE_SIZE = 100
+const INVITE_VALIDITY_MS = 60 * 15 * 1000
 
 const STR_EMPTY = ""
 const STR_BLANK = " "
@@ -54,6 +55,7 @@ const STR_template_apikey_deleteconfirm_html = "templates/apikey_deleteconfirm.h
 const STR_template_reports_deleteconfirm_html = "templates/reports_deleteconfirm.html"
 const STR_template_list_clientids_for_apikey_html = "templates/list_clientids_for_apikey.html"
 const STR_template_export_html = "templates/export.html"
+const STR_template_invite_html = "templates/invite.html"
 
 const STR_filepath_upload_template = "resources/reportfiles/%s"
 const STR_filepath_download_template = "resources/exports/%s"
@@ -79,6 +81,7 @@ const PATH_download = "/exports"
 const PATH_filelog_delete = "/filelogdelete"
 const PATH_reports_delete_confirm = "/reportsdeleteconfirm"
 const PATH_reports_delete = "/reportsdelete"
+const PATH_invite = "/invite"
 const PORT_8080 = "8080"
 
 const API_KEY_image = "image"
@@ -98,6 +101,7 @@ const API_KEY_pagesize = "pagesize"
 const API_KEY_appname = "appname"
 const API_KEY_clientid = "clientid"
 const API_KEY_name = "name"
+const API_KEY_inviteid = "inviteid"
 
 const API_URL_domain = "localhost"
 const API_URL = "http://localhost"
@@ -109,6 +113,7 @@ const TABLE_tokens = "tokens"
 const TABLE_apikeys = "apikeys"
 const TABLE_reports = "reports"
 const TABLE_clientinfo = "clientinfo"
+const TABLE_invites = "invites"
 const TABLE_USERS_COLUMN_id = STR_id
 const TABLE_USERS_COLUMN_email = "email"
 const TABLE_USERS_COLUMN_password = "password"
@@ -131,16 +136,22 @@ const TABLE_CLIENTINFO_name = "name"
 const TABLE_CLIENTINFO_manufacturer = "manufacturer"
 const TABLE_CLIENTINFO_model = "model"
 const TABLE_CLIENTINFO_deviceid = "deviceid"
+const TABLE_INVITES_COLUMN_inviteid = "inviteid"
+const TABLE_INVITES_COLUMN_apikey = TABLE_APIKEYS_COLUMN_apikey
+const TABLE_INVITES_COLUMN_issued = TABLE_TOKENS_COLUMN_issued
+const TABLE_INVITES_COLUMN_expires = TABLE_TOKENS_COLUMN_expires
 const STMT_CREATE_TABLE_USERS = "create table if not exists users('id' integer primary key, 'email' text unique, 'password' text, 'salt' text)"
-const STMT_CREATE_TABLE_TOKENS = "create table if not exists tokens('id' integer primary key, 'userid' integer, 'token' text, 'issued' integer, 'expires' integer)";
+const STMT_CREATE_TABLE_TOKENS = "create table if not exists tokens('id' integer primary key, 'userid' integer, 'token' text, 'issued' integer, 'expires' integer)"
 const STMT_CREATE_TABLE_APIKEYS = "create table if not exists apikeys('userid' integer, 'apikey' text unique, 'appname' text)"
 const STMT_CREATE_TABLE_REPORTS = "create table if not exists reports%s('id' integer primary key, 'clientid' text, 'time' integer, 'sequence' integer, 'message' text, 'filepath' text)"
 const STMT_CREATE_TABLE_CLIENTINFO = "create table if not exists clientinfo%s('clientid' text unique, 'name' text, 'manufacturer' text, 'model' text, 'deviceid' text)"
+const STMT_CREATE_TABLE_INVITES = "create table if not exists invites%s('id' integer primary key, 'inviteid' text, 'apikey' text, 'issued' integer, 'expires' integer)"
 const STMT_INSERT_INTO_USERS = "insert or ignore into users(email, password, salt) values(?, ?, ?)"
 const STMT_INSERT_INTO_TOKENS = "insert or ignore into tokens(userid, token, issued, expires) values(?, ?, ?, ?)"
 const STMT_INSERT_INTO_APIKEYS = "insert or ignore into apikeys(userid, apikey, appname) values(?, ?, ?)"
 const STMT_INSERT_INTO_REPORTS = "insert or ignore into reports%s(clientid, time, sequence, message, filepath) values(?, ?, ?, ?, ?)"
 const STMT_INSERT_INTO_CLIENTINFO = "insert or ignore into clientinfo%s(clientid, name, manufacturer, model, deviceid) values(?, ?, ?, ?, ?)"
+const STMT_INSERT_INTO_INVITES = "isnert or ignore into invites%s(inviteid, apikey, issued, expires) values(?, ?, ?, ?)"
 
 
 func HashSha1(aValue string) (string, error) {
@@ -246,16 +257,24 @@ func FileLogCreate() {
 
 func GetApiUrlListApiKeys() string {
 	if Port == PORT_8080 {
-		return API_URL + STR_symbol_colon + Port + "/apikeys"
+		return API_URL + STR_symbol_colon + Port + PATH_ApiKeys
 	} else {
-		return API_URL + "/apikeys"
+		return API_URL + PATH_ApiKeys
 	}
 }
 
 func GetApiUrlListClientIds() string {
 	if Port == PORT_8080 {
-		return API_URL + STR_symbol_colon + Port + "/clientids"
+		return API_URL + STR_symbol_colon + Port + PATH_ClientIds
 	} else {
-		return API_URL + "/clientids"
+		return API_URL + PATH_ClientIds
+	}
+}
+
+func GetApiUrlInvite() string {
+	if Port == PORT_8080 {
+		return API_URL + STR_symbol_colon + Port + PATH_ApiKeys
+	} else {
+		return API_URL + PATH_ApiKeys
 	}
 }
