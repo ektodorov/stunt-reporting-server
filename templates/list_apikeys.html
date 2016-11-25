@@ -30,10 +30,9 @@
 	<div class="panelOz" style="padding:10px">
 		Application Name={{.AppName}}<br>
 		key={{.ApiKey}}
-		<a style="margin-left:100px" href="/reports?apikey={{.ApiKey}}&appname={{.AppName}}">Go to reports</a> 
-		<a style="margin-left:50px" href="/apikeydeleteconfirm?apikey={{.ApiKey}}&appname={{.AppName}}">Delete API Key</a>
-		<br><br>
+		<a style="margin-left:50px" href="/reports?apikey={{.ApiKey}}&appname={{.AppName}}">Go to reports</a> 
 		<a style="margin-left:50px" href="/invite?apikey={{.ApiKey}}&appname={{.AppName}}">Invite users to project</a>
+		<a style="margin-left:50px" href="/apikeydeleteconfirm?apikey={{.ApiKey}}&appname={{.AppName}}">Delete API Key</a>
 		<br><br>
 	</div>
 	{{end}}

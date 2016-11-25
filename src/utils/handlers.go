@@ -393,7 +393,7 @@ func HandlerApiKeys(responseWriter http.ResponseWriter, request *http.Request) {
 	if strApiKey != STR_EMPTY {
 		sliceInviteIds := request.Form[API_KEY_inviteid]
 		if sliceInviteIds != nil && len(sliceInviteIds) > 0 {
-			DbInviteAddApiKey(userId, sliceInviteIds[0], strApiKey, nil)
+			DbInviteAddApiKey(userId, sliceInviteIds[0], strApiKey, strApiKey, nil)
 		}
 	}
 	

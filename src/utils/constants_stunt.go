@@ -125,6 +125,7 @@ const TABLE_TOKENS_COLUMN_issued = "issued"
 const TABLE_TOKENS_COLUMN_expires = "expires"
 const TABLE_APIKEYS_COLUMN_userid = "userid"
 const TABLE_APIKEYS_COLUMN_apikey = "apikey"
+const TABLE_APIKEYS_COLUMN_appname = "appname"
 const TABLE_REPORTS_COLUMN_clientid = "clientid"
 const TABLE_REPORTS_COLUMN_time = "time"
 const TABLE_REPORTS_COLUMN_sequence = "sequence"
@@ -142,7 +143,7 @@ const TABLE_INVITES_COLUMN_issued = TABLE_TOKENS_COLUMN_issued
 const TABLE_INVITES_COLUMN_expires = TABLE_TOKENS_COLUMN_expires
 const STMT_CREATE_TABLE_USERS = "create table if not exists users('id' integer primary key, 'email' text unique, 'password' text, 'salt' text)"
 const STMT_CREATE_TABLE_TOKENS = "create table if not exists tokens('id' integer primary key, 'userid' integer, 'token' text, 'issued' integer, 'expires' integer)"
-const STMT_CREATE_TABLE_APIKEYS = "create table if not exists apikeys('userid' integer, 'apikey' text unique, 'appname' text)"
+const STMT_CREATE_TABLE_APIKEYS = "create table if not exists apikeys('id' integer primary key, 'userid' integer, 'apikey' text, 'appname' text)"
 const STMT_CREATE_TABLE_REPORTS = "create table if not exists reports%s('id' integer primary key, 'clientid' text, 'time' integer, 'sequence' integer, 'message' text, 'filepath' text)"
 const STMT_CREATE_TABLE_CLIENTINFO = "create table if not exists clientinfo%s('clientid' text unique, 'name' text, 'manufacturer' text, 'model' text, 'deviceid' text)"
 const STMT_CREATE_TABLE_INVITES = "create table if not exists invites%s('id' integer primary key, 'inviteid' text, 'apikey' text, 'issued' integer, 'expires' integer)"
@@ -151,7 +152,7 @@ const STMT_INSERT_INTO_TOKENS = "insert or ignore into tokens(userid, token, iss
 const STMT_INSERT_INTO_APIKEYS = "insert or ignore into apikeys(userid, apikey, appname) values(?, ?, ?)"
 const STMT_INSERT_INTO_REPORTS = "insert or ignore into reports%s(clientid, time, sequence, message, filepath) values(?, ?, ?, ?, ?)"
 const STMT_INSERT_INTO_CLIENTINFO = "insert or ignore into clientinfo%s(clientid, name, manufacturer, model, deviceid) values(?, ?, ?, ?, ?)"
-const STMT_INSERT_INTO_INVITES = "isnert or ignore into invites%s(inviteid, apikey, issued, expires) values(?, ?, ?, ?)"
+const STMT_INSERT_INTO_INVITES = "insert or ignore into invites%s(inviteid, apikey, issued, expires) values(?, ?, ?, ?)"
 
 
 func HashSha1(aValue string) (string, error) {
@@ -217,7 +218,7 @@ func GetCookieToken(aRequest *http.Request) string {
 func IsTokenValid(responseWriter http.ResponseWriter, request *http.Request) bool {
 	token := GetCookieToken(request)
 	isValid, userId := DbIsTokenValid(token, nil)
-	log.Printf("HandlerAddApiKey, token=%s, isValid=%t, userId=%d", token, isValid, userId)
+	log.Printf("IsTokenValid, token=%s, isValid=%t, userId=%d", token, isValid, userId)
 	if !isValid {
 		ServeLogin(responseWriter, STR_MSG_login)
 		return false
