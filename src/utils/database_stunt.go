@@ -1179,6 +1179,7 @@ func DbInviteAdd(aApiKey string, aDb *sql.DB) (inviteId string) {
 	}
 	
 	DbInviteCreateTable(aApiKey, db)
+	DbInviteClean(aApiKey, db)
 	
 	inviteId, errUUID := GenerateUUID()
 	if errUUID != nil {
@@ -1200,6 +1201,7 @@ func DbInviteAdd(aApiKey string, aDb *sql.DB) (inviteId string) {
 
 func DbInviteClean(aApiKey string, aDb *sql.DB) {
 	var err error = nil
+	var stmt *sql.Stmt = nil
 	var db *sql.DB = aDb
 	
 	if db == nil {
@@ -1212,19 +1214,36 @@ func DbInviteClean(aApiKey string, aDb *sql.DB) {
 	}
 	
 	now := time.Now().UnixNano() / int64(time.Millisecond)
-	_, err = db.Exec(fmt.Sprintf("delete from %s%s where %s=? AND isssued + expires < ?", 
-				TABLE_invites, aApiKey, TABLE_INVITES_COLUMN_apikey), aApiKey, now)
+	stmt, err = db.Prepare(fmt.Sprintf("delete from %s%s where %s=? AND %s + %s < ?", 
+				TABLE_invites, aApiKey, TABLE_INVITES_COLUMN_apikey, TABLE_INVITES_COLUMN_issued, TABLE_INVITES_COLUMN_expires))
 	if err != nil {
-		log.Printf("DbInviteClean, error executing %s, error=%s", fmt.Sprintf("delete from %s%s where %s=? AND isssued + expires < ?", 
-				TABLE_invites, aApiKey, TABLE_INVITES_COLUMN_apikey), err.Error())
+		log.Printf("DbInviteClean, error preparing %s, error=%s", fmt.Sprintf("delete from %s%s where %s=? AND %s + %s < ?", 
+				TABLE_invites, aApiKey, TABLE_INVITES_COLUMN_apikey, TABLE_INVITES_COLUMN_issued, TABLE_INVITES_COLUMN_expires), err.Error())
+		return
+	}
+	_, err = stmt.Exec(aApiKey, now)
+	if err != nil {
+		log.Printf("DbInviteClean, error executing %s, error=%s", fmt.Sprintf("delete from %s%s where %s=%s AND isssued + expires < %d", 
+				TABLE_invites, aApiKey, TABLE_INVITES_COLUMN_apikey, aApiKey, now), err.Error())
 	}
 }
 
 func DbInviteCreateTable(aApiKey string, aDb *sql.DB) {
 	var err error
 	var stmt *sql.Stmt = nil
+	var db *sql.DB = aDb
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			fmt.Println("DbInviteClean, Error opening db login.sqlite, err=", err)
+			return
+		}
+		defer db.Close()
+	}
+	
 	//init table invites
-	stmt, err = aDb.Prepare(fmt.Sprintf(STMT_CREATE_TABLE_INVITES, aApiKey))
+	stmt, err = db.Prepare(fmt.Sprintf(STMT_CREATE_TABLE_INVITES, aApiKey))
 	if err != nil {
 		log.Println("init, Error preparing, %s, err=%s", STMT_CREATE_TABLE_INVITES, err)
 	}
