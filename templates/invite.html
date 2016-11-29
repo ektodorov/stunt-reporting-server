@@ -3,7 +3,7 @@
 <head>  
 
 <meta content="text/html; charset=ISO-8859-1" http-equiv="content-type">
-<title>API Keys</title>
+<title>Invite to {{.AppName}}</title>
 
 <link href="../resources/styleoz.css" rel="stylesheet" type="text/css">
 
@@ -25,22 +25,10 @@
 </div><!--.leftContentOz-->
 
 <div class="contentOz">
-
-	{{range .}}
-	<div class="panelOz" style="padding:10px">
-		Application Name={{.AppName}}<br>
-		key={{.ApiKey}}
-		<a style="margin-left:50px" href="/reports?apikey={{.ApiKey}}&appname={{.AppName}}">Go to reports</a> 
-		<a style="margin-left:50px" href="/invite?apikey={{.ApiKey}}&appname={{.AppName}}">Invite users to project</a>
-		<a style="margin-left:50px" href="/apikeydeleteconfirm?apikey={{.ApiKey}}&appname={{.AppName}}">Delete API Key</a>
-		<br><br>
-	</div>
-	{{end}}
-	
-	<div>
-	<a href="/apikeyadd">Add API Key</a>
-	</div>
-
+    <div class="panelOz" style="padding:10px">
+	Send this URL to people you want to join {{.AppName}}:<br>
+	{{.ApiUrlInvite}}?inviteid={{.InviteId}}&apikey={{.ApiKey}}
+    </div>
 </div>
 
 <div class="footer">

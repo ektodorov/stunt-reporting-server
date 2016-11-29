@@ -31,7 +31,7 @@ func DbInit() error {
 	if err != nil {
 		log.Println("init, Error exec create table stmt, err=", err)
 	}
-	stmt.Close();
+	if stmt != nil {stmt.Close();}
 	
 	//init table tokens
 	stmt, err = db.Prepare(STMT_CREATE_TABLE_TOKENS)
@@ -42,18 +42,18 @@ func DbInit() error {
 	if err != nil {
 		log.Printf("Error creating table, %s, error=%s", STMT_CREATE_TABLE_TOKENS, err.Error())
 	}
-	stmt.Close()
+	if stmt != nil {stmt.Close()}
 	
 	//init table apikeys	
 	stmt, err = db.Prepare(STMT_CREATE_TABLE_APIKEYS)
 	if err != nil {
-		log.Println("init, Error preparing, %s, err=", STMT_CREATE_TABLE_APIKEYS, err)
+		log.Printf("init, Error preparing, %s, err=%s", STMT_CREATE_TABLE_APIKEYS, err)
 	}
 	_, err = stmt.Exec()
 	if err != nil {
-		log.Println("init, Error executing, %s, err=",STMT_CREATE_TABLE_APIKEYS, err)
+		log.Printf("init, Error executing, %s, err=%s",STMT_CREATE_TABLE_APIKEYS, err)
 	}
-	stmt.Close();
+	if stmt != nil {stmt.Close();}
 	
 	return nil
 }
@@ -429,10 +429,11 @@ func DbIsApiKeyValid(aApiKey string, aDb *sql.DB) (isValid bool, userId int) {
 	}
 	defer rows.Close()
 	for (rows.Next()) {
+		var id int
 		var userId int
 		var apiKey string
 		var appName string
-		err = rows.Scan(&userId, &apiKey, &appName)
+		err = rows.Scan(&id, &userId, &apiKey, &appName)
 		if err != nil {
 			log.Printf("IsApiKeyValid, Error scan %s, err=%s", TABLE_apikeys, err.Error())
 		}
@@ -490,12 +491,13 @@ func DbGetApiKey(aUserId int, aDb *sql.DB) []*objects.ApiKey {
 	}
 	var sliceApiKeys []*objects.ApiKey = make([]*objects.ApiKey, 0, 16)
 	for rows.Next() {
+		var id int
 		var userId int
 		var apiKey string
 		var appName string
 		var objApiKey  *objects.ApiKey
 		objApiKey = new(objects.ApiKey)
-		rows.Scan(&userId, &apiKey, &appName)
+		rows.Scan(&id, &userId, &apiKey, &appName)
 		objApiKey.UserId = userId
 		objApiKey.ApiKey = apiKey
 		objApiKey.AppName = appName
@@ -542,7 +544,7 @@ func DbAddApiKey(aUserId int, aAppName string, aDb *sql.DB) bool {
 	}
 	_, err = stmt.Exec(aUserId, apiKey, aAppName)
 	if err != nil {
-		log.Printf("Error executing %s, values userId=%d, apiKey=%s, error=%s", STMT_INSERT_INTO_APIKEYS, aUserId, apiKey, err.Error())
+		log.Printf("Error executing %s, values userId=%d, apiKey=%s, appName=%s, error=%s", STMT_INSERT_INTO_APIKEYS, aUserId, apiKey, aAppName, err.Error())
 		if stmt != nil {stmt.Close()}
 		return false
 	}
@@ -1097,4 +1099,157 @@ func DbGetReportsLastPage(aApiKey string, aClientId string, aPageSize int, aDb *
 	if stmt != nil {stmt.Close()}
 	
 	return sliceReports, rowCount
+}
+
+func DbInviteAddApiKey(aUserId int, aInviteId string, aApiKey string, aAppName string, aDb *sql.DB) {
+	var err error = nil
+	var db *sql.DB = aDb
+	var stmt *sql.Stmt = nil
+	var rows *sql.Rows = nil
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			log.Printf("Error opening database=%s, error=%s", DB_NAME, err.Error())
+			return
+		}
+		defer db.Close()
+	}
+	
+	DbInviteCreateTable(aApiKey, db)
+	
+	var isValidInvite = false
+	stmt, err = db.Prepare(fmt.Sprintf("select * from %s%s where %s=?", TABLE_invites, aApiKey, TABLE_INVITES_COLUMN_inviteid))
+	if err != nil {
+		log.Printf("Error preparing, %s, error=%s", 
+			fmt.Sprintf("select * from %s%s where %s=?", TABLE_invites, aApiKey, TABLE_INVITES_COLUMN_inviteid), err.Error())
+		return
+	}
+	rows, err = stmt.Query(aInviteId)
+	if err != nil {
+		log.Printf("Error quering, %s, error=%s", fmt.Sprintf("select * from %s%s where %s=?", TABLE_invites, aApiKey, TABLE_INVITES_COLUMN_inviteid), err.Error())
+	}
+	now := time.Now().UnixNano() / int64(time.Millisecond)
+	for rows.Next() {
+		var id string
+		var inviteId string
+		var apiKey string
+		var issued int64
+		var expires int64
+		err = rows.Scan(&id, &inviteId, &apiKey, &issued, &expires)
+		if err != nil {
+			log.Printf("Error scanning, error=%s", err.Error())
+			return
+		}
+		
+		if apiKey == aApiKey && now < (issued + expires) {
+			isValidInvite = true
+			break
+		}
+	}
+	if rows != nil {rows.Close()}
+	if stmt != nil {stmt.Close()}
+	if !isValidInvite {return}
+	
+	stmt, err = db.Prepare(STMT_INSERT_INTO_APIKEYS)
+	if err != nil {
+		log.Printf("Error preparing %s, error=%s", STMT_INSERT_INTO_APIKEYS, err.Error())
+		return
+	}
+	_, err = stmt.Exec(aUserId, aApiKey, aAppName)
+	if err != nil {
+		log.Printf("Error executing %s, values userId=%d, apiKey=%s, appName=%s, error=%s", STMT_INSERT_INTO_APIKEYS, aUserId, aApiKey, aAppName, err.Error())
+		return
+	}
+	if stmt != nil {stmt.Close()}
+}
+
+func DbInviteAdd(aApiKey string, aDb *sql.DB) (inviteId string) {
+	var err error = nil
+	var stmt *sql.Stmt = nil
+	var db *sql.DB = aDb
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			fmt.Println("DbInviteAdd, Error opening db, err=", err)
+			return
+		}
+		defer db.Close()
+	}
+	
+	DbInviteCreateTable(aApiKey, db)
+	DbInviteClean(aApiKey, db)
+	
+	inviteId, errUUID := GenerateUUID()
+	if errUUID != nil {
+		fmt.Println("Error generating uuid, err=", errUUID)
+	}
+	log.Printf("DbInviteAdd, inviteId=%s", inviteId)
+	issued := time.Now().UnixNano() / int64(time.Millisecond)
+	expires := INVITE_VALIDITY_MS
+	
+	stmt, err = db.Prepare(fmt.Sprintf(STMT_INSERT_INTO_INVITES, aApiKey))
+	_, err = stmt.Exec(inviteId, aApiKey, issued, expires)
+	if err != nil {
+		fmt.Println("DbInviteAdd, Error inserting into tokens, err=", err)
+	}
+	if stmt != nil {stmt.Close()}
+	
+	return inviteId
+}
+
+func DbInviteClean(aApiKey string, aDb *sql.DB) {
+	var err error = nil
+	var stmt *sql.Stmt = nil
+	var db *sql.DB = aDb
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			fmt.Println("DbInviteClean, Error opening db login.sqlite, err=", err)
+			return
+		}
+		defer db.Close()
+	}
+	
+	now := time.Now().UnixNano() / int64(time.Millisecond)
+	stmt, err = db.Prepare(fmt.Sprintf("delete from %s%s where %s=? AND %s + %s < ?", 
+				TABLE_invites, aApiKey, TABLE_INVITES_COLUMN_apikey, TABLE_INVITES_COLUMN_issued, TABLE_INVITES_COLUMN_expires))
+	if err != nil {
+		log.Printf("DbInviteClean, error preparing %s, error=%s", fmt.Sprintf("delete from %s%s where %s=? AND %s + %s < ?", 
+				TABLE_invites, aApiKey, TABLE_INVITES_COLUMN_apikey, TABLE_INVITES_COLUMN_issued, TABLE_INVITES_COLUMN_expires), err.Error())
+		return
+	}
+	_, err = stmt.Exec(aApiKey, now)
+	if err != nil {
+		log.Printf("DbInviteClean, error executing %s, error=%s", fmt.Sprintf("delete from %s%s where %s=%s AND isssued + expires < %d", 
+				TABLE_invites, aApiKey, TABLE_INVITES_COLUMN_apikey, aApiKey, now), err.Error())
+	}
+}
+
+func DbInviteCreateTable(aApiKey string, aDb *sql.DB) {
+	var err error
+	var stmt *sql.Stmt = nil
+	var db *sql.DB = aDb
+	
+	if db == nil {
+		db, err = sql.Open(DB_TYPE, DB_NAME)
+		if err != nil {
+			fmt.Println("DbInviteClean, Error opening db login.sqlite, err=", err)
+			return
+		}
+		defer db.Close()
+	}
+	
+	//init table invites
+	stmt, err = db.Prepare(fmt.Sprintf(STMT_CREATE_TABLE_INVITES, aApiKey))
+	if err != nil {
+		log.Println("init, Error preparing, %s, err=%s", STMT_CREATE_TABLE_INVITES, err)
+	}
+	if stmt != nil {defer stmt.Close()}
+	_, err = stmt.Exec()
+	if err != nil {
+		log.Printf("init, Error executing, %s, err=%s",STMT_CREATE_TABLE_INVITES, err)
+	}
 }
