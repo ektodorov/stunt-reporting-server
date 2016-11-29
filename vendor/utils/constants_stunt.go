@@ -103,8 +103,8 @@ const API_KEY_clientid = "clientid"
 const API_KEY_name = "name"
 const API_KEY_inviteid = "inviteid"
 
-const API_URL_domain = "localhost"
-const API_URL = "http://localhost"
+const API_URL_domain = "infinite-temple-73424.herokuapp.com/"
+const API_URL = "https://infinite-temple-73424.herokuapp.com"
 
 const DB_TYPE = "sqlite3"
 const DB_NAME = "stunt.sqlite"
