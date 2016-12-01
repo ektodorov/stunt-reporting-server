@@ -29,7 +29,6 @@
 #content { 
 	margin: 0 auto;
 	width:70%;
-	height:2000px;
 	padding: 30px;
 }
 
@@ -74,14 +73,46 @@
 <div class="title">
 <p>Architecture</p>
 </div>
-
+<br>
 
 
 <span id="howtouse"></span><br><br>
 <div class="title">
 <p>How to use the HFH</p>
 </div>
+Android application setup
+<ol>
+<li>In AndroidManifest.xml add two meta-data tags at the end of the application tag:</li>
+<pre>
+&lt;meta-data android:name="stunt_enabled" android:value="true"/&gt;
+&lt;meta-data android:name="stunt_api_key" android:value="your_api_key_from_the_stunt_portal"/&gt;
+</pre>
+<li>Add Stunt source files or archive to you project.</li>
+<li>There is no registration needed, just use the appropriate “report” method.</li>
+</ol>
+<br>
 
+<p>Stunt web portal</p>
+<ol>
+<li>If you do not have an account create one by supplying an email and password on the registration page.</li>
+<a href="./images/stunt_screenshots/register.png"><img src="./images/stunt_screenshots/register.png" border="1" width="480" height="200"/></a><br><br>
+<li>Login using the email and password that you used to create an account.</li>
+<a href="./images/stunt_screenshots/login.png"><img src="./images/stunt_screenshots/login.png" border="1" width="480" height="170"/></a><br><br>
+<li>API Keys menu item - create an API key to be used in a client application.</li>
+<a href="./images/stunt_screenshots/createapikey.png"><img src="./images/stunt_screenshots/createapikey.png" border="1" width="320" height="240"/></a><br><br>
+<li>API Keys page</li>
+<ul>
+<li>Go to reports</li>
+<a href="./images/stunt_screenshots/listreports.png"><img src="./images/stunt_screenshots/listreports.png" border="1" width="320" height="240"/></a><br><br>
+<li>Shows reports sent from clients using this API Key, by going to API Keys list and selecting ClientIds from the left menu to view the list of clients.</li>
+<li>Invite users to application. Share this API Key with other users, so that they can make changes to the application and see the reports sent from clients using this API keys.</li>
+<a href="./images/stunt_screenshots/invite.png"><img src="./images/stunt_screenshots/invite.png" border="1" width="320" height="240"/></a><br><br>
+<li>Delete API key</li>
+<a href="./images/stunt_screenshots/deleteapikey.png"><img src="./images/stunt_screenshots/deleteapikey.png" border="1" width="320" height="240"/></a><br><br>
+<li>Delete reports sent with API key</li>
+<a href="./images/stunt_screenshots/deletereports.png"><img src="./images/stunt_screenshots/deletereports.png" border="1" width="320" height="240"/></a><br><br>
+<ul>
+</ol>
 
 
 </div><!--content-->
