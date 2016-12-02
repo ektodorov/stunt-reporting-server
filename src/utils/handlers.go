@@ -331,7 +331,7 @@ func HandlerLogin(responseWriter http.ResponseWriter, request *http.Request) {
 		if (userId > -1) {
 			token := DbAddToken(userId, nil)
 			AddCookie(responseWriter, token)
-			http.Redirect(responseWriter, request, GetApiUrlListApiKeys(), 301)
+			http.Redirect(responseWriter, request, GetApiUrlListApiKeys(), http.StatusTemporaryRedirect)
 		} else {
 			ServeLogin(responseWriter, "Wrong username or password");
 		}
@@ -595,6 +595,7 @@ func HandlerReportsClear(aResponseWriter http.ResponseWriter, aRequest *http.Req
 		return;
 	}
 	
+	
 	var strApiKey string
 	apiKeys := aRequest.Form[API_KEY_apikey]
 	if apiKeys != nil && len(apiKeys) > 0 {
@@ -606,7 +607,7 @@ func HandlerReportsClear(aResponseWriter http.ResponseWriter, aRequest *http.Req
 	
 	DbClearReports(strApiKey, nil)
 	DbClearClientInfo(strApiKey, nil)
-	http.Redirect(aResponseWriter, aRequest, GetApiUrlListApiKeys(), http.StatusMovedPermanently)
+	http.Redirect(aResponseWriter, aRequest, GetApiUrlListApiKeys(), http.StatusTemporaryRedirect)
 }
 
 func HandlerAddApiKey(responseWriter http.ResponseWriter, request *http.Request) {
@@ -634,7 +635,7 @@ func HandlerAddApiKey(responseWriter http.ResponseWriter, request *http.Request)
 	isAdded := DbAddApiKey(userId, appName, nil)
 	log.Printf("HadlerAddApiKey, isAdded=%t", isAdded)
 	if isAdded {
-		http.Redirect(responseWriter, request, GetApiUrlListApiKeys(), http.StatusMovedPermanently)
+		http.Redirect(responseWriter, request, GetApiUrlListApiKeys(), http.StatusTemporaryRedirect)
 	}
 }
 
@@ -691,7 +692,7 @@ func HandlerApiKeyDelete(responseWriter http.ResponseWriter, request *http.Reque
 	}
 	isDeleted := DbDeleteApiKey(apiKey, nil)
 	log.Printf("HandlerApiKeyDelete, isDeleted=%t", isDeleted)
-	http.Redirect(responseWriter, request, GetApiUrlListApiKeys(), 301)
+	http.Redirect(responseWriter, request, GetApiUrlListApiKeys(), http.StatusTemporaryRedirect)
 }
 
 func HandlerClientInfoSend(responseWriter http.ResponseWriter, request *http.Request) {
@@ -775,7 +776,7 @@ func HandlerClientInfoUpdate(responseWriter http.ResponseWriter, request *http.R
 		return
 	}
 	
-	http.Redirect(responseWriter, request, (GetApiUrlListClientIds() + "?apikey=" + strApiKey + "&clientid=" + strClientId), 301)
+	http.Redirect(responseWriter, request, (GetApiUrlListClientIds() + "?apikey=" + strApiKey + "&clientid=" + strClientId), http.StatusTemporaryRedirect)
 }
 
 func HandlerClientIds(responseWriter http.ResponseWriter, request *http.Request) {
@@ -888,11 +889,12 @@ func HandlerDownload(aResponseWriter http.ResponseWriter, aRequest *http.Request
 			if err != nil {
 				log.Printf("HandlerDownload, error writing, error=%s", err.Error())
 			}
-			written, err = buffer.WriteString(strconv.FormatInt(report.Time, 10))
+			//written, err = buffer.WriteString(strconv.FormatInt(report.Time, 10))
+			written, err = buffer.WriteString(report.TimeString)
 			if err != nil {
 				log.Printf("HandlerDownload, error writing report.Time=%d, error=%s", report.Time, err.Error())
 			}
-			written, err = buffer.WriteString(", Sequence=")
+			written, err = buffer.WriteString("\nSequence=")
 			if err != nil {
 				log.Printf("HandlerDownload, error writing, error=%s", err.Error())
 			}
@@ -916,7 +918,7 @@ func HandlerDownload(aResponseWriter http.ResponseWriter, aRequest *http.Request
 			if err != nil {
 				log.Printf("HandlerDownload, error writing report.FilePath=%s, error=%s", report.FilePath, err.Error())
 			}
-			written, err = buffer.WriteString("\n")
+			written, err = buffer.WriteString("\n\n")
 			if err != nil {
 				log.Printf("HandlerDownload, error writing, error=%s", err.Error())
 			}
