@@ -746,6 +746,7 @@ func DbClearClientInfo(aApiKey string, aDb *sql.DB) error {
 	var err error = nil
 	var db *sql.DB = aDb
 	var stmt *sql.Stmt = nil
+	var row *sql.Row = nil
 	
 	if db == nil {
 		db, err = sql.Open(DB_TYPE, DB_NAME)
@@ -754,6 +755,24 @@ func DbClearClientInfo(aApiKey string, aDb *sql.DB) error {
 			return nil
 		}
 		defer db.Close()
+	}
+	
+	stmt, err = db.Prepare(fmt.Sprintf("select name from sqlite_master where type='table' and name='%s%s'", TABLE_clientinfo, aApiKey))
+	if err != nil {
+		log.Printf("DbClearClientInfo, Error preparing %s, error=%s", 
+			fmt.Sprintf("select name from sqlite_master where type='table' and name='%s'", TABLE_clientinfo, aApiKey), err.Error())
+		return nil
+	}
+	row = stmt.QueryRow()
+	if row != nil {
+		var name string
+		err = row.Scan(&name)
+		if err != nil {
+			stmt.Close()
+			return err
+		} else {
+			stmt.Close()
+		}
 	}
 	
 	stmt, err = db.Prepare(fmt.Sprintf("delete from %s%s", TABLE_clientinfo, aApiKey))

@@ -39,11 +39,11 @@
 	{{range .Reports}}
 		<!-- id={{.Id}}, --> 
 		<!-- clientId={{.ClientId}}, --> 
-		&nbsp;&nbsp;&nbsp;&nbsp;- {{.TimeString}}, 
+		<span style="background:lightgrey; width:100%; display:inline-block;">&nbsp;&nbsp;&nbsp;&nbsp;- {{.TimeString}},</span><br>
 		sequence={{.Sequence}}, 
 		message={{.Message}}, 
 		<a href="{{.FilePath}}">{{.FilePath}}</a>
-		<br>
+		<br><br>
 	{{end}}
 	</div>
 	
