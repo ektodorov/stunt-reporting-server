@@ -66,6 +66,11 @@
 <div class="title">
 <p>Description</p>
 </div>
+Stunt is aimed at getting information from clients while an application is in development. We like to think of it as
+analytics for developers, because we inteded it to collect data from an application that is important from an application development
+stand point.But it can easily can be changed to collect any analytical data from an application that we deem important.
+We have convenience methods for sending string reports, sending images, sending any kind of files. We have implemented an example client
+for Android. Later on we can have one for iOS.
 
 
 
@@ -73,12 +78,29 @@
 <div class="title">
 <p>Architecture</p>
 </div>
+Access<br>
+We use the API key to authenticate to the service. We have some code inplace, which would make it easy to switch to Token based
+authentication. Currently we have selected not to use it, since we don't want to have an initial call to get or refresh a Token.
+We want to make it easy to just send our report to the server at any moment without any preconditions. Although even if we decide to
+switch to Token authentication later, we can implement it in a way that the Stunt framework would ask and refresh the token whenever it is
+needed, without requiring the user to have a "register" call before any other report calls.
+
+<br><br>
+
+Database<br>
+We are currently using a SQLite database that is created in the current working directory of the application. Yes, yes we know.
+But is what is most convenient for development for us. If we are going to be using it with more than one or two user simultaneously this
+is not what we would want to use, since SQLite does not support concurent access. We could easily serialize the database access, but the users
+that are on the queue would ver quickly reach the point where their connectins will timeout often.
+But fear not. With one line of change we can use any other database. We intend to use it with Heroku's Postgre SQL:<br>
+database_stunt.go -> func DbInit:<br>
+db, err = sql.Open(DB_TYPE, DB_NAME) we should pass the database type and access URL.
 <br>
 
 
 <span id="howtouse"></span><br><br>
 <div class="title">
-<p>How to use the HFH</p>
+<p>How to use the Stunt</p>
 </div>
 Android application setup
 <ol>
