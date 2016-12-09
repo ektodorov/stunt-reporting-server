@@ -83,8 +83,25 @@ We use the API key to authenticate to the service. We have some code inplace, wh
 authentication. Currently we have selected not to use it, since we don't want to have an initial call to get or refresh a Token.
 We want to make it easy to just send our report to the server at any moment without any preconditions. Although even if we decide to
 switch to Token authentication later, we can implement it in a way that the Stunt framework would ask and refresh the token whenever it is
-needed, without requiring the user to have a "register" call before any other report calls.
+needed, without requiring the user to have a "register" call before any other report calls.<br><br>
 
+For the Android client implementation we have variables in StuntConst.java file:<br>
+<pre>
+    public static final int REPORTRATE_INSTANT = 0;
+    public static final int REPORTRATE_TIME = 1;
+    public static final int REPORTRATE_ON_EVENT_COUNT = 2;
+</pre>
+<br>
+This is that we intendet to implement reporting in different condition.
+<ul>
+<li>Instantly - reports are sent immediately, like the current implementation.</li>
+<li>Timed reports - reports are aggregated and sent only on predefined timeouts.</li>
+<li>Counted reports - reports are collected and sent only when a certain ammount of reports have aggregated.</li>
+<ul>
+But then we decide in the use case that we have in mind we don't need the latter to and implemented only the Instant mode of reports.<br>
+Also if we need the reporting to be more persistent we would implement a check if the report has been successfuly sent and if not we would keep the report
+until the next time we try to send a report and so on, until the application is running. If we want reports to be even more stubborn we would not keep such
+aggregated reports (only) in memory, but we will persist them to disk, so that we can even send them if the application is closed and later started again.
 <br><br>
 
 Database<br>
@@ -97,6 +114,13 @@ database_stunt.go -> func DbInit:<br>
 db, err = sql.Open(DB_TYPE, DB_NAME) we should pass the database type and access URL.
 <br>
 
+In the constants_stunt.go file we can find the database tables and their structure.<br>
+TABLE_reports<br>
+TABLE_clientinfo<br>
+TABLE_invites<br>
+tables are suffixed with an API key. This way each API key has separate such tables from other api keys. It is a means of sharding the data, because
+there is no need to store all reports for all API keys in one set of these tables.
+<br>
 
 <span id="howtouse"></span><br><br>
 <div class="title">
