@@ -97,7 +97,7 @@ This is that we intendet to implement reporting in different condition.
 <li>Instantly - reports are sent immediately, like the current implementation.</li>
 <li>Timed reports - reports are aggregated and sent only on predefined timeouts.</li>
 <li>Counted reports - reports are collected and sent only when a certain ammount of reports have aggregated.</li>
-<ul>
+</ul>
 But then we decide in the use case that we have in mind we don't need the latter to and implemented only the Instant mode of reports.<br>
 Also if we need the reporting to be more persistent we would implement a check if the report has been successfuly sent and if not we would keep the report
 until the next time we try to send a report and so on, until the application is running. If we want reports to be even more stubborn we would not keep such
