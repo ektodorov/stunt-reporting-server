@@ -16,84 +16,15 @@ import (
 	"time"
 )
 
+//HandlerRoot handles access to "/" (root) path.
 func HandlerRoot(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
 	aRequest.ParseForm()
 	if !(IsTokenValid(aResponseWriter, aRequest)) {
 		return
 	}
-
-	//ServeError(aResponseWriter, STR_MSG_NOTFOUND, STR_template_page_error_html)
-
-	//must test req.URL.Path == "/" and process only then,
-	//because this handler will be called for every path, since "/" matches all paths starting with "/"
-
-	//    aRequest.ParseForm();
-	//
-	//	cookie, errCookie := aRequest.Cookie(API_KEY_token)
-	//	if errCookie != nil {
-	//		log.Printf("handleRoot, Error reading cookie, error=%s", errCookie.Error())
-	//		ServeLogin(aResponseWriter, STR_MSG_login);
-	//		return
-	//	}
-	//	isTokenValid, userId := DbIsTokenValid(cookie.Value, nil)
-	//	if errCookie == nil && !isTokenValid {
-	//		ServeLogin(aResponseWriter, STR_MSG_login);
-	//		return
-	//	}
-	//
-	//	user, errorUser := DbGetUserLoad(userId, nil);
-	//	if errorUser != nil {
-	//		log.Printf("errorUser=%s", errorUser.Error())
-	//	}
-	//	log.Printf("cookie.value=%s", cookie.Value)
-	//
-	//	//Check if the file in the url path exists
-	//	templateFile, err := template.ParseFiles(aRequest.URL.Path[1:]);
-	//	if err != nil {
-	//		ServeError(aResponseWriter, STR_MSG_404, STR_template_page_error_html);
-	//	} else {
-	//		AddCookie(aResponseWriter, cookie.Value)
-	//		if aRequest.URL.Path[1:] == "templates/Content.html" && user.Email != STR_EMPTY {
-	//			err = templateFile.Execute(aResponseWriter, user);
-	//		} else {
-	//			err = templateFile.Execute(aResponseWriter, nil);
-	//		}
-	//		if err != nil {
-	//			log.Printf("handleRoot, Error=", err.Error());
-	//		}
-	//	}
 }
 
-//func HandlerEcho(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
-//	responseText := STR_EMPTY
-//
-//	aRequest.ParseForm()
-//
-//	body := aRequest.Form
-//	log.Printf("aRequest.Form=%s", body)
-//
-//	bytesBody, err := ioutil.ReadAll(aRequest.Body)
-//	if(err != nil) {
-//		log.Printf("Error reading body, err=%s", err.Error())
-//	} else {
-//		log.Printf("bytesBody=%s", string(bytesBody))
-//		responseText = string(bytesBody)
-//	}
-//
-//	headers := aRequest.Header
-//	for key, value := range headers {
-//		log.Printf("header=%s\n", key)
-//		fmt.Fprintf(aResponseWriter, "Header=%s\n", key)
-//		for idx, val := range value {
-//			log.Printf("idx=%d, value=%s", idx, val)
-//			fmt.Fprintf(aResponseWriter, "value=%s\n", val)
-//		}
-//	}
-//
-//	fmt.Fprintf(aResponseWriter, "Method=%s\n", aRequest.Method)
-//	fmt.Fprintf(aResponseWriter, "%s\n", responseText)
-//}
-
+//HandlerMessage handles access to PATH_MESSAGE.
 func HandlerMessage(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
 	aRequest.ParseForm()
 
@@ -141,6 +72,7 @@ func HandlerMessage(aResponseWriter http.ResponseWriter, aRequest *http.Request)
 	ServeResult(aResponseWriter, result, STR_template_result)
 }
 
+//HandlerUploadImage handles access to PATH_UPLOADIMAGE.
 func HandlerUploadImage(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
 	requestMethod := aRequest.Method
 	if requestMethod == STR_GET {
@@ -154,10 +86,6 @@ func HandlerUploadImage(aResponseWriter http.ResponseWriter, aRequest *http.Requ
 		if errorParse != nil {
 			log.Printf("errorParse=%s", errorParse.Error())
 		}
-		//		myform := aRequest.MultipartForm
-		//		valuesMap := myform.Value //map[string][]string
-		//		arrayMessage := valuesMap["message"]
-		//		log.Printf("arrayMessage=%d", len(arrayMessage))
 
 		//Check ApiKey
 		strMessage := aRequest.FormValue(API_KEY_message)
@@ -228,6 +156,7 @@ func HandlerUploadImage(aResponseWriter http.ResponseWriter, aRequest *http.Requ
 	}
 }
 
+//HandlerUploadFile handles access to PATH_UPLOADFILE.
 func HandlerUploadFile(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
 	requestMethod := aRequest.Method
 	if requestMethod == STR_GET {
@@ -309,6 +238,7 @@ func HandlerUploadFile(aResponseWriter http.ResponseWriter, aRequest *http.Reque
 	}
 }
 
+//HandlerLogin handles access to PATH_Login.
 func HandlerLogin(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 
@@ -338,6 +268,7 @@ func HandlerLogin(responseWriter http.ResponseWriter, request *http.Request) {
 	}
 }
 
+//HandlerLogout handles access to PATH_logout.
 func HandlerLogout(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 
@@ -349,6 +280,7 @@ func HandlerLogout(responseWriter http.ResponseWriter, request *http.Request) {
 	ServeLogin(responseWriter, STR_EMPTY)
 }
 
+//HandlerRegister handles access to PATH_Register.
 func HandlerRegister(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 
@@ -376,6 +308,7 @@ func HandlerRegister(responseWriter http.ResponseWriter, request *http.Request) 
 	}
 }
 
+//HandlerApiKeys handles access to PATH_ApiKeys.
 func HandlerApiKeys(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 
@@ -413,6 +346,7 @@ func HandlerApiKeys(responseWriter http.ResponseWriter, request *http.Request) {
 	}
 }
 
+//HandlerReports handles access to PATH_Reports.
 func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 
@@ -546,6 +480,7 @@ func HandlerReports(responseWriter http.ResponseWriter, request *http.Request) {
 	}
 }
 
+//HandlerReportsClearConfirm handles access to PATH_reports_delete_confirm.
 func HandlerReportsClearConfirm(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
 	aRequest.ParseForm()
 
@@ -588,6 +523,7 @@ func HandlerReportsClearConfirm(aResponseWriter http.ResponseWriter, aRequest *h
 	}
 }
 
+//HandlerReportsClear handles access to PATH_reports_delete.
 func HandlerReportsClear(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
 	aRequest.ParseForm()
 
@@ -615,6 +551,7 @@ func HandlerReportsClear(aResponseWriter http.ResponseWriter, aRequest *http.Req
 	http.Redirect(aResponseWriter, aRequest, GetApiUrlListApiKeys(), http.StatusTemporaryRedirect)
 }
 
+//HandlerAddApiKey handles access to PATH_AddApiKey.
 func HandlerAddApiKey(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 
@@ -644,6 +581,7 @@ func HandlerAddApiKey(responseWriter http.ResponseWriter, request *http.Request)
 	}
 }
 
+//HandlerApiKeyDeleteConfirm handles access to PATH_ApiKeyDeleteConfirm.
 func HandlerApiKeyDeleteConfirm(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 
@@ -682,6 +620,7 @@ func HandlerApiKeyDeleteConfirm(responseWriter http.ResponseWriter, request *htt
 	}
 }
 
+//HandlerApiKeyDelete handles access to PATH_ApiKeyDelete.
 func HandlerApiKeyDelete(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 
@@ -704,6 +643,7 @@ func HandlerApiKeyDelete(responseWriter http.ResponseWriter, request *http.Reque
 	http.Redirect(responseWriter, request, GetApiUrlListApiKeys(), http.StatusTemporaryRedirect)
 }
 
+//HandlerClientInfoSend handles access to PATH_CLIENTINFO.
 func HandlerClientInfoSend(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 
@@ -739,6 +679,7 @@ func HandlerClientInfoSend(responseWriter http.ResponseWriter, request *http.Req
 	}
 }
 
+//HandlerClientInfoUpdate handles access to PATH_ClientInfoUpdate.
 func HandlerClientInfoUpdate(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 
@@ -788,6 +729,7 @@ func HandlerClientInfoUpdate(responseWriter http.ResponseWriter, request *http.R
 	http.Redirect(responseWriter, request, (GetApiUrlListClientIds() + "?apikey=" + strApiKey + "&clientid=" + strClientId), http.StatusTemporaryRedirect)
 }
 
+//HandlerClientIds handles access to PATH_ClientIds.
 func HandlerClientIds(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 
@@ -825,6 +767,7 @@ func HandlerClientIds(responseWriter http.ResponseWriter, request *http.Request)
 	}
 }
 
+//HandlerDownload handles access to PATH_download.
 func HandlerDownload(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
 	aRequest.ParseForm()
 
@@ -946,6 +889,7 @@ func HandlerDownload(aResponseWriter http.ResponseWriter, aRequest *http.Request
 	http.ServeContent(aResponseWriter, aRequest, STR_EMPTY, time.Now(), bytes.NewReader(data))
 }
 
+//HandlerFileLogDelete handles access to PATH_filelog_delete.
 func HandlerFileLogDelete(aResponseWriter http.ResponseWriter, aRequest *http.Request) {
 	aRequest.ParseForm()
 
@@ -966,6 +910,7 @@ func HandlerFileLogDelete(aResponseWriter http.ResponseWriter, aRequest *http.Re
 	}
 }
 
+//HandlerInviteCreate handles access to PATH_invite.
 func HandlerInviteCreate(responseWriter http.ResponseWriter, request *http.Request) {
 	request.ParseForm()
 

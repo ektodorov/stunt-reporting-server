@@ -154,7 +154,7 @@ const STMT_INSERT_INTO_REPORTS = "insert or ignore into reports%s(clientid, time
 const STMT_INSERT_INTO_CLIENTINFO = "insert or ignore into clientinfo%s(clientid, name, manufacturer, model, deviceid) values(?, ?, ?, ?, ?)"
 const STMT_INSERT_INTO_INVITES = "insert or ignore into invites%s(inviteid, apikey, issued, expires) values(?, ?, ?, ?)"
 
-
+//HashSha1 hashes the passed in string value using sha1 hash.
 func HashSha1(aValue string) (string, error) {
 	hashSha1 := sha1.New();
 	_, err := hashSha1.Write([]byte(aValue))
@@ -162,11 +162,13 @@ func HashSha1(aValue string) (string, error) {
 	return fmt.Sprintf("%x", hashed), err
 }
 
+//GenerateUUID creates a UUID.
 func GenerateUUID() (string, error) {
 	id, err := uuid.NewV4()
 	return id.String(), err
 }
 
+//GenerateRandomString creates a random string with the passed in length.
 func GenerateRandomString(aLength int) string {
 	rand.Seed(time.Now().Unix());
 	b := make([]rune, aLength)
@@ -176,6 +178,7 @@ func GenerateRandomString(aLength int) string {
 	return string(b)
 }
 
+//GenerateToken creates an Authentication token to be used by the web application client.
 func GenerateToken() (string, error) {
 	tokenuuid, error := GenerateUUID()
 	if error != nil {
@@ -186,6 +189,7 @@ func GenerateToken() (string, error) {
 	return token, error
 }
 
+//AddCookie adds the passed in token to the Cookie header.
 func AddCookie(responseWriter http.ResponseWriter, token string) {
 	cookie := new(http.Cookie)
 	cookie.Name = API_KEY_token
@@ -196,6 +200,7 @@ func AddCookie(responseWriter http.ResponseWriter, token string) {
 	http.SetCookie(responseWriter, cookie)
 }
 
+//GetCookieToken gets the authentication token from the Cookie header.
 func GetCookieToken(aRequest *http.Request) string {
 //We don't want to use header, because we would have to write our AJAX application, that is why we use cookies
 //	headers := aRequest.Header
@@ -215,6 +220,7 @@ func GetCookieToken(aRequest *http.Request) string {
 	return token
 }
 
+//IsTokenValid validates the token obtained from the Cookie header, against the database.
 func IsTokenValid(responseWriter http.ResponseWriter, request *http.Request) bool {
 	token := GetCookieToken(request)
 	isValid, userId := DbIsTokenValid(token, nil)
@@ -226,6 +232,7 @@ func IsTokenValid(responseWriter http.ResponseWriter, request *http.Request) boo
 	return true
 }
 
+//IsApiKeyValid validates the passed in API key against the database.
 func IsApiKeyValid(aApiKey string) (isValid bool, userId int) {
 	isValid, userId = DbIsApiKeyValid(aApiKey, nil)
 	if !isValid {
@@ -234,6 +241,7 @@ func IsApiKeyValid(aApiKey string) (isValid bool, userId int) {
 	return isValid, userId
 }
 
+//FileLogCreate creates a log file to which logs can be written instead to standart output.
 func FileLogCreate() {
 	var err error
 	FileLog, err = os.OpenFile("resources/logs/logfile.txt", os.O_RDWR | os.O_CREATE | os.O_APPEND, 0666)
@@ -256,6 +264,7 @@ func FileLogCreate() {
 	}
 }
 
+//GetApiUrlListApiKeys gets URL to PATH_ApiKeys.
 func GetApiUrlListApiKeys() string {
 	if Port == PORT_8080 {
 		return API_URL + STR_symbol_colon + Port + PATH_ApiKeys
@@ -264,6 +273,7 @@ func GetApiUrlListApiKeys() string {
 	}
 }
 
+//GetApiUrlListClientIds gets URL to PATH_ClientIds.
 func GetApiUrlListClientIds() string {
 	if Port == PORT_8080 {
 		return API_URL + STR_symbol_colon + Port + PATH_ClientIds
@@ -272,6 +282,7 @@ func GetApiUrlListClientIds() string {
 	}
 }
 
+//GetApiUrlInvite gets URL to PATH_ApiKeys.
 func GetApiUrlInvite() string {
 	if Port == PORT_8080 {
 		return API_URL + STR_symbol_colon + Port + PATH_ApiKeys

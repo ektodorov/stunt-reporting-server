@@ -7,6 +7,7 @@ import (
 	"objects"
 )
 
+//ServeError serves error HTML page to web portal clients.
 func ServeError(aResponseWriter http.ResponseWriter, aMessage string, aTemplateFilePath string) {
 	templateError, err := template.ParseFiles(aTemplateFilePath)
 	if err != nil {
@@ -22,6 +23,7 @@ func ServeError(aResponseWriter http.ResponseWriter, aMessage string, aTemplateF
 	}
 }
 
+//ServeResult serves result response to report clients.
 func ServeResult(aResponseWriter http.ResponseWriter, aResult *objects.Result, aTemplateFilePath string) {
 	templateResult, err := template.ParseFiles(aTemplateFilePath)
 	if err != nil {
@@ -35,6 +37,7 @@ func ServeResult(aResponseWriter http.ResponseWriter, aResult *objects.Result, a
 	 }
 }
 
+//ServeLogin serves login page to web portal clients.
 func ServeLogin(responseWriter http.ResponseWriter, message string) {
 	loginTemplate, err := template.ParseFiles(STR_templates_login_html);
 	if err != nil {
@@ -49,6 +52,7 @@ func ServeLogin(responseWriter http.ResponseWriter, message string) {
 	}
 }
 
+//ServeRegister serves register page to web portal clients.
 func ServeRegister(responseWriter http.ResponseWriter, message string) {
 	registerTemplate, err := template.ParseFiles(STR_templates_register_html)
 	if err != nil {
@@ -63,6 +67,7 @@ func ServeRegister(responseWriter http.ResponseWriter, message string) {
 	}
 }
 
+//ServeAddApiKey serves add API key page to web portal clients.
 func ServeAddApiKey(responseWriter http.ResponseWriter) {
 	addApiKeyTemplate, err := template.ParseFiles(STR_template_add_apikey_html)
 	if err != nil {
@@ -71,19 +76,5 @@ func ServeAddApiKey(responseWriter http.ResponseWriter) {
 	err = addApiKeyTemplate.Execute(responseWriter, nil)
 	if err != nil {
 		log.Printf("ServeAddApiKey, Error=%s", err.Error())
-	}
-}
-
-func ServeContent(responseWriter http.ResponseWriter, userName string) {
-	pageTemplate, err := template.ParseFiles(STR_templates_Content_html);
-	if err != nil {
-		log.Printf("ServeContent, Error=%s", err.Error());
-	}
-		
-	user := new(objects.User);
-	user.Email = userName;
-	err = pageTemplate.Execute(responseWriter, user);
-	if err != nil {
-		log.Printf("ServeContent, Error=%s", err.Error());
 	}
 }
