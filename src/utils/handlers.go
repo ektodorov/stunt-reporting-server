@@ -91,7 +91,10 @@ func HandlerUploadImage(aResponseWriter http.ResponseWriter, aRequest *http.Requ
 		strMessage := aRequest.FormValue(API_KEY_message)
 		log.Printf("strMessage=%s", strMessage)
 		report := new(objects.Report)
-		json.Unmarshal([]byte(strMessage), report)
+		errorJson := json.Unmarshal([]byte(strMessage), report)
+		if errorJson != nil {
+			log.Printf("HandlerUploadImage, error unmarshall json, errorJson=%s", errorJson.Error())
+		}
 		log.Printf("HandlerUploadImage, report.ApiKey=%s, report.ClientId=%s, report.Message=%s, report.Sequence=%d, report.Time=%d",
 			report.ApiKey, report.ClientId, report.Message, report.Sequence, report.Time)
 		var isApiKeyValid = false
@@ -174,7 +177,10 @@ func HandlerUploadFile(aResponseWriter http.ResponseWriter, aRequest *http.Reque
 		strMessage := aRequest.FormValue(API_KEY_message)
 		log.Printf("strMessage=%s", strMessage)
 		report := new(objects.Report)
-		json.Unmarshal([]byte(strMessage), report)
+		errorJson := json.Unmarshal([]byte(strMessage), report)
+		if errorJson != nil {
+			log.Printf("HandlerUploadFile, error unmarshall json, errorJson=%s", errorJson.Error())
+		}
 		log.Printf("HandlerUploadFile, report.ApiKey=%s, report.ClientId=%s, report.Message=%s, report.Sequence=%d, report.Time=%d",
 			report.ApiKey, report.ClientId, report.Message, report.Sequence, report.Time)
 		var isApiKeyValid = false
