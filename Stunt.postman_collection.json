@@ -1,0 +1,559 @@
+{
+	"variables": [],
+	"info": {
+		"name": "Stunt",
+		"_postman_id": "526eb014-febd-2368-08c6-b1a52b488861",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "SendMessage",
+			"request": {
+				"url": "http://localhost:8080/message",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json; charset=utf8",
+						"description": ""
+					},
+					{
+						"key": "Authorization",
+						"value": "30ad1c571eec45e150cd4200f318a383",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"apikey\":\"30ad1c571eec45e150cd4200f318a383\",\n\t\"sequence\": 1,\n\t\"time\": 1449333576,\n\t\"message\": \"Hello Stunt\",\n\t\"clientid\": \"clientidpostman\"\n}"
+				},
+				"description": ""
+			},
+			"response": [
+				{
+					"id": "80fe2afd-2eea-4a02-a9e8-f3c22751f696",
+					"name": "SendMessageResponse",
+					"originalRequest": {
+						"url": "http://localhost:8080/message",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json; charset=utf8",
+								"description": ""
+							},
+							{
+								"key": "Authorization",
+								"value": "30ad1c571eec45e150cd4200f318a383",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								"{",
+								"\n",
+								"\t",
+								"\"",
+								"a",
+								"p",
+								"i",
+								"k",
+								"e",
+								"y",
+								"\"",
+								":",
+								"\"",
+								"3",
+								"0",
+								"a",
+								"d",
+								"1",
+								"c",
+								"5",
+								"7",
+								"1",
+								"e",
+								"e",
+								"c",
+								"4",
+								"5",
+								"e",
+								"1",
+								"5",
+								"0",
+								"c",
+								"d",
+								"4",
+								"2",
+								"0",
+								"0",
+								"f",
+								"3",
+								"1",
+								"8",
+								"a",
+								"3",
+								"8",
+								"3",
+								"\"",
+								",",
+								"\n",
+								"\t",
+								"\"",
+								"s",
+								"e",
+								"q",
+								"u",
+								"e",
+								"n",
+								"c",
+								"e",
+								"\"",
+								":",
+								" ",
+								"1",
+								",",
+								"\n",
+								"\t",
+								"\"",
+								"t",
+								"i",
+								"m",
+								"e",
+								"\"",
+								":",
+								" ",
+								"1",
+								"4",
+								"4",
+								"9",
+								"3",
+								"3",
+								"3",
+								"5",
+								"7",
+								"6",
+								",",
+								"\n",
+								"\t",
+								"\"",
+								"m",
+								"e",
+								"s",
+								"s",
+								"a",
+								"g",
+								"e",
+								"\"",
+								":",
+								" ",
+								"\"",
+								"H",
+								"e",
+								"l",
+								"l",
+								"o",
+								" ",
+								"S",
+								"t",
+								"u",
+								"n",
+								"t",
+								"\"",
+								",",
+								"\n",
+								"\t",
+								"\"",
+								"c",
+								"l",
+								"i",
+								"e",
+								"n",
+								"t",
+								"i",
+								"d",
+								"\"",
+								":",
+								" ",
+								"\"",
+								"c",
+								"l",
+								"i",
+								"e",
+								"n",
+								"t",
+								"i",
+								"d",
+								"p",
+								"o",
+								"s",
+								"t",
+								"m",
+								"a",
+								"n",
+								"\"",
+								"\n",
+								"}"
+							]
+						},
+						"description": ""
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "plain",
+					"_postman_previewtype": "text",
+					"header": [
+						{
+							"key": "Content-Length",
+							"value": "34",
+							"name": "Content-Length",
+							"description": "The length of the response body in octets (8-bit bytes)"
+						},
+						{
+							"key": "Content-Type",
+							"value": "text/plain; charset=utf-8",
+							"name": "Content-Type",
+							"description": "The mime type of this content"
+						},
+						{
+							"key": "Date",
+							"value": "Thu, 23 Feb 2017 07:06:32 GMT",
+							"name": "Date",
+							"description": "The date and time that the message was sent"
+						}
+					],
+					"cookie": [],
+					"responseTime": 97,
+					"body": "{\r\n\"error\":,\r\n\"result_code\":200\r\n}"
+				}
+			]
+		},
+		{
+			"name": "SendImage",
+			"request": {
+				"url": "http://localhost:8080/uploadimage",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Connection",
+						"value": "Keep-Alive",
+						"description": ""
+					},
+					{
+						"key": "ENCTYPE",
+						"value": "multipart/form-data",
+						"description": ""
+					},
+					{
+						"key": "Content-Type",
+						"value": "application/x-www-form-urlencoded",
+						"description": ""
+					},
+					{
+						"key": "Authorization",
+						"value": "30ad1c571eec45e150cd4200f318a383",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "message",
+							"value": "{ \"apikey\":\"30ad1c571eec45e150cd4200f318a383\", \t\"sequence\": 1, \t\"time\": 1449333576, \t\"message\": \"Hello Stunt\", \t\"clientid\": \"clientidpostman\" }",
+							"type": "text",
+							"enabled": true
+						},
+						{
+							"key": "image",
+							"type": "file",
+							"enabled": true,
+							"src": "Screenshot.png"
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": [
+				{
+					"id": "b81911e1-7332-4bf9-9a62-cc2c889986a5",
+					"name": "SendImageResponse",
+					"originalRequest": {
+						"url": "http://localhost:8080/uploadimage",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Connection",
+								"value": "Keep-Alive",
+								"description": ""
+							},
+							{
+								"key": "ENCTYPE",
+								"value": "multipart/form-data",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"description": ""
+							},
+							{
+								"key": "Authorization",
+								"value": "30ad1c571eec45e150cd4200f318a383",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "apikey",
+									"value": "30ad1c571eec45e150cd4200f318a383",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "sequence",
+									"value": "2",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "time",
+									"value": "1449333576",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "message",
+									"value": "Message uploadbitmap",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "clientid",
+									"value": "clientidpostman",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "image",
+									"type": "file",
+									"enabled": true,
+									"src": {
+										"0": {}
+									}
+								}
+							]
+						},
+						"description": ""
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "plain",
+					"_postman_previewtype": "text",
+					"header": [
+						{
+							"key": "Content-Length",
+							"value": "34",
+							"name": "Content-Length",
+							"description": "The length of the response body in octets (8-bit bytes)"
+						},
+						{
+							"key": "Content-Type",
+							"value": "text/plain; charset=utf-8",
+							"name": "Content-Type",
+							"description": "The mime type of this content"
+						},
+						{
+							"key": "Date",
+							"value": "Thu, 23 Feb 2017 07:41:49 GMT",
+							"name": "Date",
+							"description": "The date and time that the message was sent"
+						}
+					],
+					"cookie": [],
+					"responseTime": 50,
+					"body": "{\r\n\"error\":,\r\n\"result_code\":200\r\n}"
+				}
+			]
+		},
+		{
+			"name": "SendClientInfo",
+			"request": {
+				"url": "http://localhost:8080/sendclientinfo",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json; charset=utf-8",
+						"description": ""
+					},
+					{
+						"key": "Authorization",
+						"value": "30ad1c571eec45e150cd4200f318a383",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"apikey\":\"30ad1c571eec45e150cd4200f318a383\",\n\t\"clientid\": \"clientidpostman\",\n\t\"name\": \"postman\",\n\t\"manufacturer\": \"google\",\n\t\"model\": \"postmanclient\",\n\t\"deviceid\": \"postmandeviceid\"\n\t\"sequence\": 1\n}"
+				},
+				"description": ""
+			},
+			"response": []
+		},
+		{
+			"name": "SendFile",
+			"request": {
+				"url": "http://localhost:8080/uploadfile",
+				"method": "POST",
+				"header": [
+					{
+						"key": "Connection",
+						"value": "Keep-Alive",
+						"description": ""
+					},
+					{
+						"key": "ENCTYPE",
+						"value": "multipart/form-data",
+						"description": ""
+					},
+					{
+						"key": "Content-Type",
+						"value": "multipart/form-data;boundary=*************************7d41b838504d8",
+						"description": ""
+					},
+					{
+						"key": "Authorization",
+						"value": "30ad1c571eec45e150cd4200f318a383",
+						"description": ""
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "message",
+							"value": "{ \"apikey\":\"30ad1c571eec45e150cd4200f318a383\", \t\"sequence\": 4, \t\"time\": 1449334590, \t\"message\": \"Hello Stunt upload file\", \t\"clientid\": \"clientidpostman\" }",
+							"type": "text",
+							"enabled": true
+						},
+						{
+							"key": "file",
+							"type": "file",
+							"enabled": true,
+							"src": "test.html"
+						}
+					]
+				},
+				"description": ""
+			},
+			"response": [
+				{
+					"id": "18ac44bf-d704-4fc1-8926-fd5b5a2cb84f",
+					"name": "SendImageResponse",
+					"originalRequest": {
+						"url": "http://localhost:8080/uploadimage",
+						"method": "POST",
+						"header": [
+							{
+								"key": "Connection",
+								"value": "Keep-Alive",
+								"description": ""
+							},
+							{
+								"key": "ENCTYPE",
+								"value": "multipart/form-data",
+								"description": ""
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"description": ""
+							},
+							{
+								"key": "Authorization",
+								"value": "30ad1c571eec45e150cd4200f318a383",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "apikey",
+									"value": "30ad1c571eec45e150cd4200f318a383",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "sequence",
+									"value": "2",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "time",
+									"value": "1449333576",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "message",
+									"value": "Message uploadbitmap",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "clientid",
+									"value": "clientidpostman",
+									"type": "text",
+									"enabled": true
+								},
+								{
+									"key": "image",
+									"type": "file",
+									"enabled": true,
+									"src": {
+										"0": {}
+									}
+								}
+							]
+						},
+						"description": ""
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "plain",
+					"_postman_previewtype": "text",
+					"header": [
+						{
+							"key": "Content-Length",
+							"value": "34",
+							"name": "Content-Length",
+							"description": "The length of the response body in octets (8-bit bytes)"
+						},
+						{
+							"key": "Content-Type",
+							"value": "text/plain; charset=utf-8",
+							"name": "Content-Type",
+							"description": "The mime type of this content"
+						},
+						{
+							"key": "Date",
+							"value": "Thu, 23 Feb 2017 07:41:49 GMT",
+							"name": "Date",
+							"description": "The date and time that the message was sent"
+						}
+					],
+					"cookie": [],
+					"responseTime": 50,
+					"body": "{\r\n\"error\":,\r\n\"result_code\":200\r\n}"
+				}
+			]
+		}
+	]
+}
