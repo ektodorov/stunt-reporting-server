@@ -3,5 +3,5 @@ Stunt server is the server application that provides the services collecting the
 <br><br>
 <a href="https://ektodorov.github.io/stunt-reporting-server/">Description of the project</a><br><br>
 <a href="http://techzealous.blogspot.bg/2016/12/introducing-stunt-developer-analytics.html">Blog post</a><br><br>
-<a href="https://github.com/ektodorov/stunt-reporting-android">Stunt reporting Android client</a>
+<a href="https://github.com/ektodorov/stunt-reporting-android">Stunt reporting Android client</a><br>
 <a href="https://github.com/ektodorov/stunt-reporting-ios">Stunt reporting iOS client</a>
